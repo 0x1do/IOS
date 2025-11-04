@@ -25,4 +25,4 @@ This means the system can be loaded and started — a big first milestone!
 
 ## Next Steps
 
-tbd
+Add bound checks to printk, add another features
