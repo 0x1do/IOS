@@ -1,6 +1,6 @@
 CC = gcc
 LD = ld
-CFLAGS = -ffreestanding -nostdlib -m32
+CFLAGS = -ffreestanding -nostdlib -m32 
 
 ISO_DIR = iso
 OUT_DIR = out

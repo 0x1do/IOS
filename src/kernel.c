@@ -1,20 +1,29 @@
-// kernel.c — simplest kernel
+#include "kernel.h"
 
 __attribute__((section(".multiboot")))
 const unsigned int multiboot_header[] = {
-    0x1BADB002,  // magic number
-    0x0,         // flags
-    -(0x1BADB002) // checksum
-};
+    MULTIBOOT_MAGIC,
+    0x0, // flags
+    MULTIBOOT_CHECKSUM};
 
-void kernel_main(void) {
-    const char *msg = "Eli the bootloader works!!\n";
-    char *vga = (char*)0xB8000; // VGA text buffer
-
-    for (int i = 0; msg[i] != '\0'; i++) {
-        vga[i * 2] = msg[i];      // character
-        vga[i * 2 + 1] = 0x07;    // attribute: light grey on black
+void printk(char *str)
+{
+    static int offset = 0;
+    while (*str != '\0')
+    {
+        vga->chr = *str;
+        vga->clr = LIGHT_GREY_ON_BLACK;
+        str++;
+        vga++;
     }
+}
 
-    while (1) { __asm__("hlt"); } // halt CPU forever
+void kernel_main(void)
+{
+    printk("simplest ");
+    printk("printk");
+    while (1)
+    {
+        __asm__("hlt");
+    }
 }
