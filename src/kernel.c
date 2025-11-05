@@ -6,22 +6,28 @@ const unsigned int multiboot_header[] = {
     0x0, // flags
     MULTIBOOT_CHECKSUM};
 
+static struct vga_char *const vga_buf = (struct vga_char *)VGA_MEMORY;
+
 void printk(char *str)
 {
     static int offset = 0;
     while (*str != '\0')
     {
-        vga->chr = *str;
-        vga->clr = LIGHT_GREY_ON_BLACK;
+        if (offset >= MAX_SCREEN_SIZE) {
+            offset = 0;
+        }
+        if (*str == '\n') {
+            offset += SCREEN_WIDTH - (offset % SCREEN_WIDTH) - 1;
+        }
+        vga_buf[offset].character = *str;
+        vga_buf[offset].attribute = LIGHT_GREY_ON_BLACK;
         str++;
-        vga++;
+        offset++;
     }
 }
 
 void kernel_main(void)
 {
-    printk("simplest ");
-    printk("printk");
     while (1)
     {
         __asm__("hlt");

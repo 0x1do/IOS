@@ -25,4 +25,4 @@ This means the system can be loaded and started — a big first milestone!
 
 ## Next Steps
 
-Add bound checks to printk, add another features
+add printk basic string formatting support
