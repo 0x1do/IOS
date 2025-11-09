@@ -1,18 +1,23 @@
 CC = gcc
 LD = ld
-CFLAGS = -ffreestanding -nostdlib -m32 
+CFLAGS = -ffreestanding -nostdlib -m32 -Werror
 
 ISO_DIR = iso
 OUT_DIR = out
 KERNEL = kernel.elf
 ISO = $(OUT_DIR)/ios.iso
 
+SRC = src/kernel.c framework/printk.c
+OBJS = $(SRC:.c=.o)
+
 all: $(ISO)
 
-$(KERNEL): src/kernel.c
-	$(CC) $(CFLAGS) -c src/kernel.c -o kernel.o
-	$(LD) -m elf_i386 -T boot/linker.ld -o $(KERNEL) kernel.o
+$(KERNEL): $(OBJS)
+	$(LD) -m elf_i386 -T boot/linker.ld -o $(KERNEL) $(OBJS)
 	mv $(KERNEL) $(ISO_DIR)/boot/.
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(ISO): $(KERNEL)
 	mkdir -p $(OUT_DIR)
@@ -22,5 +27,5 @@ run: $(ISO)
 	qemu-system-i386 -cdrom $(ISO)
 
 clean:
-	rm -f *.o $(KERNEL) $(ISO_DIR)/boot/$(KERNEL)
+	rm -f $(OBJS) $(KERNEL) $(ISO_DIR)/boot/$(KERNEL)
 	rm -rf $(OUT_DIR)
