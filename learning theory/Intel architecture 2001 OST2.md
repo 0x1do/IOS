@@ -1,7 +1,10 @@
 ## CPUID instruction
 A way to check availability of features in our CPU.
+
 Instead of operands it uses EAX and sometimes ECX as input.
+
 Output goes to ax, bx, cx, dx, and the CPU support this operation if ID flag (bit 21) is on.
+
 
 -----
 
@@ -18,7 +21,9 @@ Also referred as long/extended mode.
 
 #### System management mode
 If SMI (system management interrupt) received, we are getting to this mode.
+
 Can protect itself from all other privileged code.
+
 Currently does not seem relevant/interesting 
 
 ##### Diagram that shows relevant parts in execution modes
