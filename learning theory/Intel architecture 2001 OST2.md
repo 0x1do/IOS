@@ -35,13 +35,20 @@ Currently does not seem relevant/interesting
 
 ## Segmentation
 A concept that is being used in order to divide the process memory space into a few logical segments. 
+
 These are the commonly used segments:
+
 Code segment  - includes the program instructions
+
 Data segment  - global and static variables 
+
 Stack segment - function call stack
+
 Extra segment - extra (usually data)
 
+
 Each segment have a segment descriptor, that would include base address, size and access.
+
 With segments, logical addresses came by. They are shaped in the form of `SEGMENT+offset`.
 
 ##### Logical address with 64-bit Operand Size
@@ -71,7 +78,8 @@ More in-depth, in order to transform logical address to linear, the `segment sel
 
 That descriptor table is also known as the **GDT** (Global Descriptor Table)
 
-If we will take a deeper dive into the segment selector, we will se it is built in the following form:
+If we will take a deeper dive into the segment selector, 
+we will se it is built in the following form:
 <table>
   <tr>
     <th>Index<br><sub>Bits 3-15</sub></th>
@@ -81,7 +89,9 @@ If we will take a deeper dive into the segment selector, we will se it is built 
 </table>
 
  Index - the row umber in the table
- GDT(=0)/LDT(=1) -  from which table it shuold look for, local or global
+
+ GDT(=0)/LDT(=1) -  from which table it should look for, local or global
+
  RPL - Requested Privilege Level
 
 ## GDT
