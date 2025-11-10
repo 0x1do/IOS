@@ -97,6 +97,14 @@ we will se it is built in the following form:
 
  GDT(=0)/LDT(=1) -  from which table it should look for, local or global
 
- RPL - Requested Privilege Level
+ RPL - Requested Privilege Level, value corresponds to the ring.
 
-## GDT
+ 0 = kernel mode, 3 = user mode. Then, the CPU executes max(RPL, CPL) (CPL - Current Privilege Level) to determine what access to give.
+
+
+
+## GDT && LDT
+
+GDTR (GDT Register) - Base address of GDT in RAM and its size
+
+LDTR (LDT Register) - Base address of LDT in RAM and its size

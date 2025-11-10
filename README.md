@@ -25,3 +25,7 @@ I’ve successfully built a **minimal OS** that **GRUB can boot** and a simple i
 ## Next Steps
 
 Implement GDT
+
+Maybe rewrite in C++
+
+Move to limine
