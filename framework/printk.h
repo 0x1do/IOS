@@ -11,7 +11,19 @@ struct vga_char {
 	char attribute;
 };
 
+enum FormatSpecifiers {
+	SIGNED_DECIMAL = 'd',
+	UNSIGNED_DECIMAL = 'u',
+	UNSIGNED_OCTAL = 'o',
+	UNSIGNED_HEX = 'x',
+	CHARACTER = 'c',
+	STRING = 's',
+	POINTER_ADDRESS = 'p',
+	MODULO = '%'
+};
+
 void setChar(char *str, int offset, int color);
+enum FormatSpecifiers getFormatSpecifier(char specifier);
 char *uint_to_str(unsigned int value, int base);
 char *int_to_str(int value, int base);
 void formatEvaluation(int *argp, int *offset, char ch);
