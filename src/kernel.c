@@ -7,6 +7,7 @@ const unsigned int multiboot_header[] = { MULTIBOOT_MAGIC,
 
 void kernel_main(void)
 {
+
 	while (1) {
 		__asm__("hlt");
 	}

@@ -5,3 +5,27 @@
 typedef enum { false = 0, true = 1 } bool;
 
 void kernel_main(void);
+
+struct descriptorEntry {
+    short segmentLimit;
+    short baseAddress;
+    char baseAddress;
+    char flags; // type, S, DPL, P
+
+};
+
+struct DescriptorEntry {
+    unsigned int SegLimit15_00 : 16;  // Segment Limit 15-00 (part of the Segment Limit)
+    unsigned int Base23_00 : 24;      // Base Address 23-00 (part of the Base Address)
+    unsigned int Type : 4;            // Type
+    unsigned int S : 1;               // S
+    unsigned int DPL : 2;             // DPL
+    unsigned int P : 1;               // P
+    unsigned int SegLimit19_16 : 4;   // Seg. Limit 19-16
+    unsigned int AVL : 1;             // AVL
+    unsigned int L : 1;               // L
+    unsigned int D_B : 1;             // D/B
+    unsigned int G : 1;               // G
+    unsigned int Base31_24 : 8;       // Base 31-24
+};
+

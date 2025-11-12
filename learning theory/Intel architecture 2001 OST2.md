@@ -108,3 +108,43 @@ we will se it is built in the following form:
 GDTR (GDT Register) - Base address of GDT in RAM and its size
 
 LDTR (LDT Register) - Base address of LDT in RAM and its size
+
+Each entry in the tables is called **segment descriptor**. 
+
+The segment descriptor takes **8 bytes** has the following structure:
+
+<table> <tr> <th colspan="8">Base 31:24<br><sub>31–24</sub></th> <th>G<br><sub>23</sub></th> <th>D/B<br><sub>22</sub></th> <th>L<br><sub>21</sub></th> <th>AVL<br><sub>20</sub></th> <th colspan="4">Seg. Limit 19:16<br><sub>19–16</sub></th> <th>P<br><sub>15</sub></th> <th colspan="2">DPL<br><sub>14–13</sub></th> <th>S<br><sub>12</sub></th> <th colspan="4">Type<br><sub>11–8</sub></th> <th colspan="2">Base 23:16<br><sub>7–0</sub></th> </tr> <tr> <th colspan="16">Base Address 15:00<br><sub>31–16</sub></th> <th colspan="16">Segment Limit 15:00<br><sub>15–0</sub></th> </tr> </table>
+
+
+**L** -  64-bit code segment, long mode flag
+
+**Base Address** - 32 bits address that points to the start of the segment, in 64 bits is always 0.
+
+
+**Segment limit** - size if the segment in bytes, in 64 bit mode, limits are not checked.
+
+**G** - granularity flag, irrelevant for 64 bit mode, wether the limit is in bytes or 4096 bytes.
+
+**P** - present flag (1=present), if not present, the cpu generates segment-not-present exception
+
+**S** - system flag, 0 for system segment, 1 for code/data segment
+
+**TYPE** - type flags, differs if the segment is system or code/data:
+![alt text](image-2.png) 
+
+Expand down - allow stack growth towards lower addresses
+
+conforming - allow lower privilege code to execute them (meaning ring 3 e.g. could execute ring 0 conformed segment)
+
+
+#### And for system:
+
+![alt text](image-3.png)
+
+
+**D/B** - If the seg. descriptor has a type of code, then it will be called Default Opcode Size, if 0 its 16 bits, 1 for 32 bits.
+if it has a type of data, then it it will be called  big flag, if 0 moves SP by 16 bits, and 1 for 32 bits.
+
+**DPL** - Descriptor Privilege Level Flag from 0-3
+
+**AVL** - Available flag, no specific usage
