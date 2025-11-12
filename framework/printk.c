@@ -7,28 +7,6 @@ void setChar(char *str, int offset, int color)
 	vga_buf[offset].attribute = color;
 }
 
-enum FormatSpecifiers getFormatSpecifier(char specifier)
-{
-	switch (specifier) {
-	case 'd':
-		return SIGNED_DECIMAL;
-	case 'u':
-		return UNSIGNED_DECIMAL;
-	case 'o':
-		return UNSIGNED_OCTAL;
-	case 'x':
-		return UNSIGNED_HEX;
-	case 'c':
-		return CHARACTER;
-	case 's':
-		return STRING;
-	case 'p':
-		return POINTER_ADDRESS;
-	case '%':
-		return MODULO;
-	}
-}
-
 char *uint_to_str(unsigned int value, int base)
 {
 	char buf[32];
@@ -78,8 +56,7 @@ char *int_to_str(int value, int base)
 
 void formatEvaluation(int *argp, int *offset, char ch)
 {
-	enum FormatSpecifiers SPECIFIER = getFormatSpecifier(ch);
-	switch (SPECIFIER) {
+	switch ((enum FormatSpecifiers)ch) {
 	case SIGNED_DECIMAL:
 		printk(int_to_str(*argp, 10));
 		break;
