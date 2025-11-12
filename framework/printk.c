@@ -7,6 +7,28 @@ void setChar(char *str, int offset, int color)
 	vga_buf[offset].attribute = color;
 }
 
+enum FormatSpecifiers getFormatSpecifier(char specifier)
+{
+	switch (specifier) {
+	case 'd':
+		return SIGNED_DECIMAL;
+	case 'u':
+		return UNSIGNED_DECIMAL;
+	case 'o':
+		return UNSIGNED_OCTAL;
+	case 'x':
+		return UNSIGNED_HEX;
+	case 'c':
+		return CHARACTER;
+	case 's':
+		return STRING;
+	case 'p':
+		return POINTER_ADDRESS;
+	case '%':
+		return MODULO;
+	}
+}
+
 char *uint_to_str(unsigned int value, int base)
 {
 	char buf[32];
@@ -56,29 +78,30 @@ char *int_to_str(int value, int base)
 
 void formatEvaluation(int *argp, int *offset, char ch)
 {
-	switch (ch) {
-	case 'd': // Signed decimal integer
+	enum FormatSpecifiers SPECIFIER = getFormatSpecifier(ch);
+	switch (SPECIFIER) {
+	case SIGNED_DECIMAL:
 		printk(int_to_str(*argp, 10));
 		break;
-	case 'u': // Unsigned decimal integer
+	case UNSIGNED_DECIMAL:
 		printk(uint_to_str(*argp, 10));
 		break;
-	case 'o': // Unsigned octal
+	case UNSIGNED_OCTAL:
 		printk(uint_to_str(*argp, 8));
 		break;
-	case 'x': // Unsigned hexadecimal integer
+	case UNSIGNED_HEX:
 		printk(uint_to_str(*argp, 16));
 		break;
-	case 'c': // Character
+	case CHARACTER:
 		setChar((char *)argp, *offset, GREY);
 		break;
-	case 's': // String of characters
+	case STRING:
 		printk((char *)*argp);
 		break;
-	case 'p': // Pointer address
+	case POINTER_ADDRESS:
 		printk("0x%x", (int)*argp);
 		break;
-	case '%':
+	case MODULO:
 		static char mod = '%';
 		setChar(&mod, *offset, GREY);
 		break;
