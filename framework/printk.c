@@ -96,7 +96,13 @@ void printk(char *str, ...)
 			offset = 0;
 		}
 		if (*str == '%') {
-			formatEvaluation(argp, &offset, *(str + 1));
+			char nextChar = *(str + 1);
+			if(nextChar == '\0')
+			{
+				str++;
+				continue;
+			}
+			formatEvaluation(argp, &offset, nextChar);
 			argp++;
 			str += 2;
 			continue;
