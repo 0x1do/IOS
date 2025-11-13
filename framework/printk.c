@@ -17,6 +17,7 @@ char *uint_to_str(unsigned int value, int base)
 	if (value == 0) {
 		retbuf[0] = '0';
 		retbuf[1] = '\0';
+		return retbuf;
 	}
 
 	while (value > 0 && i < 32) {
@@ -30,6 +31,7 @@ char *uint_to_str(unsigned int value, int base)
 	}
 
 	retbuf[i] = '\0';
+
 	return retbuf;
 }
 
@@ -76,6 +78,7 @@ void formatEvaluation(int *argp, int *offset, char ch)
 		printk((char *)*argp);
 		break;
 	case POINTER_ADDRESS:
+		if((int)*argp == '\0') break;
 		printk("0x%x", (int)*argp);
 		break;
 	case MODULO:
@@ -88,7 +91,7 @@ void formatEvaluation(int *argp, int *offset, char ch)
 void printk(char *str, ...)
 {
 	int *argp = (int *)&str;
-	argp += sizeof(str) / sizeof(int); // second arg
+	argp += sizeof(str) / sizeof(int);
 
 	static int offset = 0;
 	while (*str != '\0') {
