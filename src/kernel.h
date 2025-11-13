@@ -15,6 +15,7 @@ struct DescriptorEntry encodeDescriptor(unsigned int SegLimit,
 										bool L,
 										bool D_B,
 										bool G);
+void printDescriptorEntry(struct DescriptorEntry entry);
 
 struct DescriptorEntry {
 	unsigned int SegLimit15_00 : 16; // Segment Limit 15-00
