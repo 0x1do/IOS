@@ -7,7 +7,7 @@ OUT_DIR = out
 KERNEL = kernel.elf
 ISO = $(OUT_DIR)/ios.iso
 
-SRC = src/kernel.c framework/printk.c
+SRC = src/kernel.c src/framework/printk.c src/gdt.c
 OBJS = $(SRC:.c=.o)
 
 all: $(ISO)
