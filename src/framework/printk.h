@@ -1,14 +1,22 @@
 #pragma once
 #define VGA_MEMORY 0xB8000
-#define DIGITS "0123456789abcdef"
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 #define MAX_SCREEN_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT)
-#define GREY 0x07
+#include "utils.h"
 
-struct vga_char {
+enum Colors {
+	BLACK = 0X0,
+	GREEN = 0X2,
+	RED = 0X4,
+	ORANGE = 0X6,
+	GREY = 0X7,
+	YELLOW = 0XE
+};
+
+struct VgaChar {
 	char character;
-	char attribute;
+	char color;
 };
 
 enum FormatSpecifiers {
@@ -19,12 +27,12 @@ enum FormatSpecifiers {
 	CHARACTER = 'c',
 	STRING = 's',
 	POINTER_ADDRESS = 'p',
-	MODULO = '%'
+	MODULO = '%',
+	LF = '\n'
 };
 
-void setChar(char *str, int offset, int color);
+void printChar(char str, int cursor, int color);
+void puts(char *str, int *cursor);
 enum FormatSpecifiers getFormatSpecifier(char specifier);
-char *uint_to_str(unsigned int value, int base);
-char *int_to_str(int value, int base);
-void formatEvaluation(int *argp, int *offset, char ch);
+void formatEvaluation(int *argp, int *cursor, char ch);
 void printk(char *str, ...);

@@ -148,3 +148,5 @@ if it has a type of data, then it it will be called  big flag, if 0 moves SP by 
 **DPL** - Descriptor Privilege Level Flag from 0-3
 
 **AVL** - Available flag, no specific usage
+
+Note that in 64 bit mode many fields are irrelevant:![alt text](image-4.png)
