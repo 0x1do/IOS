@@ -3,25 +3,28 @@ LD = ld
 CFLAGS = -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -Wextra -Werror
 
 ISO_DIR = iso
-OUT_DIR = out
+BUILD_DIR = build
 KERNEL = kernel.elf
-ISO = $(OUT_DIR)/ios.iso
+ISO = $(ISO_DIR)/ios.iso
 LIMINE = Limine
 LIMINE_BINARIES = limine-bios-cd.bin limine-uefi-cd.bin limine-bios.sys limine.conf
 SRC := $(wildcard src/**/**/**/*.c) $(wildcard src/**/**/*.c) $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard Flanterm/src/*.c) $(wildcard Flanterm/src/**/*.c)
-OBJS = $(SRC:.c=.o)
+OBJS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC))
 
 all: $(ISO)
 
 $(KERNEL): $(OBJS)
+	mkdir -p $(ISO_DIR)/boot
 	$(LD) -m elf_x86_64 -T boot/linker.ld -o $(KERNEL) $(OBJS)
+	mkdir -p $(ISO_DIR)/boot
 	mv $(KERNEL) $(ISO_DIR)/boot/.
 
-%.o: %.c
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(ISO): $(KERNEL)
-	mkdir -p $(OUT_DIR)
+	mkdir -p $(BUILD_DIR)
 	@cp $(addprefix $(LIMINE)/,$(LIMINE_BINARIES)) $(ISO_DIR)/
 	cp $(LIMINE)/limine.conf .
 	xorriso -as mkisofs \
@@ -38,7 +41,6 @@ run: $(ISO)
 	qemu-system-x86_64 -cdrom $(ISO)
 
 clean:
-	rm -f $(OBJS) $(KERNEL) $(ISO_DIR)/boot/$(KERNEL)
-	rm $(ISO)
-	rm -rf $(OUT_DIR)
-	rm $(ISO_DIR)/limine*
+	rm -r $(BUILD_DIR)/*
+	rm -r $(ISO_DIR)/*
+	
