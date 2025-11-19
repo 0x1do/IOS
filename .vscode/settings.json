@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "flanterm.h": "c",
-        "fb.h": "c",
-        "printk.h": "c",
-        "string.h": "c",
-        "limine.h": "c"
-    }
-}

@@ -15,19 +15,15 @@ __attribute__((used, section(".limine_requests_start"))) static volatile struct
 __attribute__((used, section(".limine_requests_end"))) static volatile uint64_t
 	limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
-void done()
-{
-	while (1)
-		;
-	;
-}
-
 struct flanterm_context *ft_ctx;
+
 void _start(void)
 {
 	ft_ctx = init_terminal(framebuffer_request);
 	kernelMain();
-	done();
+	while (1)
+		;
+	;
 }
 
 void kernelMain(void)

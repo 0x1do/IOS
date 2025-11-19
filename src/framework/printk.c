@@ -12,21 +12,40 @@ void puts(char *str)
 		printChar(*str++);
 }
 
+void longEvaluation(va_list *args, char *str)
+{
+	char buf[65];
+	switch (*(str + 1)) {
+	case UNSIGNED_DECIMAL:
+		puts(ulongToStr(va_arg(*args, unsigned long), DECIMAL, buf));
+		str++;
+		break;
+	case SIGNED_DECIMAL:
+		puts(ulongToStr(va_arg(*args, unsigned long), DECIMAL, buf));
+		str++;
+		break;
+	case UNSIGNED_HEX:
+		puts(ulongToStr(va_arg(*args, unsigned long), HEX, buf));
+		str++;
+		break;
+	}
+}
+
 void formatEvaluation(va_list *args, char *str)
 {
 	char return_buffer[33];
 	switch ((enum FormatSpecifiers) * str) {
 	case SIGNED_DECIMAL:
-		puts(intToStr(va_arg(*args, int), 10, return_buffer));
+		puts(intToStr(va_arg(*args, int), DECIMAL, return_buffer));
 		break;
 	case UNSIGNED_DECIMAL:
-		puts(uintToStr(va_arg(*args, unsigned int), 10, return_buffer));
+		puts(uintToStr(va_arg(*args, unsigned int), DECIMAL, return_buffer));
 		break;
 	case UNSIGNED_OCTAL:
-		puts(uintToStr(va_arg(*args, unsigned int), 8, return_buffer));
+		puts(uintToStr(va_arg(*args, unsigned int), OCTAL, return_buffer));
 		break;
 	case UNSIGNED_HEX:
-		puts(uintToStr(va_arg(*args, unsigned int), 16, return_buffer));
+		puts(uintToStr(va_arg(*args, unsigned int), HEX, return_buffer));
 		break;
 	case CHARACTER:
 		printChar((char)va_arg(*args, int));
@@ -35,21 +54,7 @@ void formatEvaluation(va_list *args, char *str)
 		puts(va_arg(*args, char *));
 		break;
 	case LONG:
-		char buf[65];
-		switch (*(str + 1)) {
-		case UNSIGNED_DECIMAL:
-			puts(ulongToStr(va_arg(*args, unsigned long), 10, buf));
-			str++;
-			break;
-		case SIGNED_DECIMAL:
-			puts(ulongToStr(va_arg(*args, unsigned long), 10, buf));
-			str++;
-			break;
-		case UNSIGNED_HEX:
-			puts(ulongToStr(va_arg(*args, unsigned long), 16, buf));
-			str++;
-			break;
-		}
+		longEvaluation(args, str);
 		break;
 	case POINTER_ADDRESS:
 		printk("0x%lx", (unsigned long)va_arg(*args, void *));

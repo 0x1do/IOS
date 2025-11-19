@@ -1,6 +1,6 @@
 CC = gcc
 LD = ld
-CFLAGS = -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -Wextra -Werror
+CFLAGS = -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -Wextra -Werror
 
 ISO_DIR = iso
 OUT_DIR = out
@@ -8,7 +8,7 @@ KERNEL = kernel.elf
 ISO = $(OUT_DIR)/ios.iso
 LIMINE = Limine
 LIMINE_BINARIES = limine-bios-cd.bin limine-uefi-cd.bin limine-bios.sys limine.conf
-SRC := $(wildcard src/**/**/**/*.c) $(wildcard src/**/**/*.c) $(wildcard src/**/*.c) $(wildcard src/*.c)
+SRC := $(wildcard src/**/**/**/*.c) $(wildcard src/**/**/*.c) $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard Flanterm/src/*.c) $(wildcard Flanterm/src/**/*.c)
 OBJS = $(SRC:.c=.o)
 
 all: $(ISO)

@@ -1,9 +1,5 @@
 #pragma once
-#define CGA_MEMORY 0xB8000
-#define CGA_MEMORY_ODD (0xB8000 + 0x2000)
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 25
-#define MAX_SCREEN_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT)
+#include "flanterm.h"
 #include "string.h"
 
 typedef __builtin_va_list va_list;
@@ -23,8 +19,16 @@ enum FormatSpecifiers {
 	LONG = 'l'
 };
 
-void printChar(char str);
+enum CountBase {
+	BINARY = 0,
+	OCTAL = 8,
+	DECIMAL = 10,
+	HEX = 16
+};
+
+void printChar(char ch);
 void puts(char *str);
 enum FormatSpecifiers getFormatSpecifier(char specifier);
+void longEvaluation(va_list *args, char *str);
 void formatEvaluation(va_list *args, char *str);
 void printk(char *str, ...);
