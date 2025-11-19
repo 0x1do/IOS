@@ -15,7 +15,7 @@ all: $(ISO)
 
 $(KERNEL): $(OBJS)
 	mkdir -p $(ISO_DIR)/boot
-	$(LD) -m elf_x86_64 -T boot/linker.ld -o $(KERNEL) $(OBJS)
+	$(LD) -m elf_x86_64 -T src/boot/linker.ld -o $(KERNEL) $(OBJS)
 	mkdir -p $(ISO_DIR)/boot
 	mv $(KERNEL) $(ISO_DIR)/boot/.
 
