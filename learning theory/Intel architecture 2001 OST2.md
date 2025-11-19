@@ -148,3 +148,15 @@ if it has a type of data, then it it will be called  big flag, if 0 moves SP by 
 **DPL** - Descriptor Privilege Level Flag from 0-3
 
 **AVL** - Available flag, no specific usage
+
+Note that in 64 bit mode many fields are irrelevant:![alt text](image-4.png)
+
+Call gate - A way to move to a diffrent segment at a diffrent privilege level
+![alt text](image-5.png)
+
+### Exceptions
+Excpetions has 3 main categories:
+1. Fault - RIP points to a faulty instruction - recoverable
+2. Trap - RIP points to trapping instruction - recoverable
+3. Abort - RIP points to abort that terminates the program - unrecoverable
+## IDT
