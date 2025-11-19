@@ -1,15 +1,15 @@
 #include "gdt.h"
 
 struct DescriptorEntry encodeDescriptor(unsigned int segment_limit,
-										int *base_address,
+										void *base_address,
 										unsigned int type,
-										bool system,
+										short system,
 										unsigned int descriptor_privilege_level,
-										bool present,
-										bool available,
-										bool long_mode,
-										bool d_b,
-										bool granularity)
+										short present,
+										short available,
+										short long_mode,
+										short d_b,
+										short granularity)
 {
 	struct DescriptorEntry entry;
 
@@ -25,8 +25,8 @@ struct DescriptorEntry encodeDescriptor(unsigned int segment_limit,
 	entry.lower_segment_limit = segment_limit & 0xffff;
 	entry.higher_segment_limit = (segment_limit >> 16) & 0xf;
 
-	entry.lower_base_address = ((unsigned int)base_address & 0x00ffffff);
-	entry.higher_base_address = ((unsigned int)base_address >> 24) & 0xff;
+	entry.lower_base_address = ((unsigned long)base_address & 0x00ffffff);
+	entry.higher_base_address = ((unsigned long)base_address >> 24) & 0xff;
 
 	return entry;
 }
@@ -50,12 +50,12 @@ void printDescriptorEntry(struct DescriptorEntry entry)
 
 struct DescriptorEntry
 encode64BitDescriptor(unsigned int type,
-					  bool system,
+					  short system,
 					  unsigned int descriptor_privilege_level,
-					  bool present,
-					  bool available,
-					  bool d_b,
-					  bool granularity)
+					  short present,
+					  short available,
+					  short d_b,
+					  short granularity)
 {
 	return encodeDescriptor(0xfffff,
 							0,
@@ -64,22 +64,22 @@ encode64BitDescriptor(unsigned int type,
 							descriptor_privilege_level,
 							present,
 							available,
-							true,
+							1,
 							d_b,
 							granularity);
 }
 
-struct GDTR gdtr;
-struct GDTTable gdt_table;
+struct Gdtr gdtr;
+struct GdtTable gdt_table;
 
-void initGDT()
+void initGdt()
 {
-	gdtr.base_address = (int *)&gdt_table;
+	gdtr.base_address = (void *)&gdt_table;
 	gdtr.limit = sizeof(gdt_table);
 
 	gdt_table.table[EMPTY_ENTRY] = encode64BitDescriptor(0, 0, 0, 0, 0, 0, 0);
 	gdt_table.table[CODE_SEGMENT] =
-		encode64BitDescriptor(EXECUTE_READ, true, 3, true, 0, true, true);
+		encode64BitDescriptor(EXECUTE_READ, 1, 3, 1, 0, 1, 1);
 	gdt_table.table[DATA_SEGMENT] =
-		encode64BitDescriptor(READ_WRITE, true, 3, true, 0, true, true);
+		encode64BitDescriptor(READ_WRITE, 1, 3, 1, 0, 1, 1);
 }

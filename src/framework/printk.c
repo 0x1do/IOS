@@ -1,83 +1,87 @@
 #include "printk.h"
 
-void printChar(char str, int cursor, int color)
+void printChar(char ch)
 {
-	static struct VgaChar *vga_buf = (struct VgaChar *)VGA_MEMORY;
-	vga_buf[cursor].character = str;
-	vga_buf[cursor].color = color;
+	extern struct flanterm_context *ft_ctx;
+	flanterm_write(ft_ctx, &ch, 1);
 }
 
-void puts(char *str, int *cursor)
+void puts(char *str)
 {
-	while (*str != '\0') {
-		if (*cursor >= MAX_SCREEN_SIZE)
-			*cursor = 0;
-		printChar(*str, *cursor, GREY);
-		str++;
-		(*cursor)++;
-	}
+	while (*str != '\0')
+		printChar(*str++);
 }
 
-void formatEvaluation(int *argp, int *cursor, char ch)
+void formatEvaluation(va_list *args, char *str)
 {
-	switch ((enum FormatSpecifiers)ch) {
+	char return_buffer[33];
+	switch ((enum FormatSpecifiers) * str) {
 	case SIGNED_DECIMAL:
-		puts(intToStr(*argp, 10), cursor);
+		puts(intToStr(va_arg(*args, int), 10, return_buffer));
 		break;
 	case UNSIGNED_DECIMAL:
-		puts(uintToStr(*argp, 10), cursor);
+		puts(uintToStr(va_arg(*args, unsigned int), 10, return_buffer));
 		break;
 	case UNSIGNED_OCTAL:
-		puts(uintToStr(*argp, 8), cursor);
+		puts(uintToStr(va_arg(*args, unsigned int), 8, return_buffer));
 		break;
 	case UNSIGNED_HEX:
-		puts(uintToStr(*argp, 16), cursor);
+		puts(uintToStr(va_arg(*args, unsigned int), 16, return_buffer));
 		break;
 	case CHARACTER:
-		printChar(*(char *)argp, *cursor, GREY);
+		printChar((char)va_arg(*args, int));
 		break;
 	case STRING:
-		puts((char *)*argp, cursor);
+		puts(va_arg(*args, char *));
+		break;
+	case LONG:
+		char buf[65];
+		switch (*(str + 1)) {
+		case UNSIGNED_DECIMAL:
+			puts(ulongToStr(va_arg(*args, unsigned long), 10, buf));
+			str++;
+			break;
+		case SIGNED_DECIMAL:
+			puts(ulongToStr(va_arg(*args, unsigned long), 10, buf));
+			str++;
+			break;
+		case UNSIGNED_HEX:
+			puts(ulongToStr(va_arg(*args, unsigned long), 16, buf));
+			str++;
+			break;
+		}
 		break;
 	case POINTER_ADDRESS:
-		printk("0x%x", (int)*argp);
+		printk("0x%lx", (unsigned long)va_arg(*args, void *));
 		break;
 	case MODULO:
-		static char mod = '%';
-		printChar(mod, *cursor, GREY);
+		printChar('%');
 		break;
 	}
 }
 
 void printk(char *str, ...)
 {
-	int *argp = (int *)&str;
-	argp += sizeof(str) / sizeof(int);
+	/*
+	 *	todo: implement va_list/va_arg/va_start
+	 */
+	va_list args;
+	va_start(args, str);
 
-	static int cursor = 0;
 	while (*str != '\0') {
-		if (cursor >= MAX_SCREEN_SIZE) {
-			cursor = 0;
-		}
 		switch (*str) {
-		case (MODULO):
-			char nextChar = *(str + 1);
-			if (nextChar == '\0') {
-				str++;
+		case ('%'):
+			str++;
+			if (*str == '\0')
 				continue;
-			}
-			formatEvaluation(argp, &cursor, nextChar);
-			argp++;
-			str += 2;
-			break;
-		case (LF):
-			cursor += SCREEN_WIDTH - (cursor % SCREEN_WIDTH);
+			formatEvaluation(&args, str);
 			str++;
 			break;
 		default:
-			printChar(*str, cursor, GREY);
+			printChar(*str);
 			str++;
-			cursor++;
 		}
 	}
+
+	va_end(args);
 }

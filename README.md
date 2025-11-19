@@ -18,7 +18,7 @@ A detailed breakdown table will be added soon.
 
 ## Current Progress
 
-I’ve successfully built a **minimal OS** that **GRUB can boot** and a simple implementation of printk (that supports format string) and GDT. 
+I’ve successfully built a **64 bit minimal OS** that **Limine can boot** and a simple implementation of printk (that gets framebuffer (not VGA!!!) and supports format string) and GDT. 
 
 ---
 
@@ -27,5 +27,3 @@ I’ve successfully built a **minimal OS** that **GRUB can boot** and a simple i
 Implement IDT
 
 Maybe rewrite in C++
-
-Move to limine

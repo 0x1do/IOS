@@ -1,27 +1,28 @@
 #pragma once
+#include "framework/string.h"
 #include "kernel.h"
 
 struct DescriptorEntry encodeDescriptor(unsigned int segment_limit,
-										int *base_address,
+										void *base_address,
 										unsigned int Type,
-										bool system,
+										short system,
 										unsigned int descriptor_privilege_level,
-										bool present,
-										bool available,
-										bool long_mode,
-										bool d_b,
-										bool granularity);
+										short present,
+										short available,
+										short long_mode,
+										short d_b,
+										short granularity);
 
 struct DescriptorEntry
 encode64BitDescriptor(unsigned int Type,
-					  bool system,
+					  short system,
 					  unsigned int descriptor_privilege_level,
-					  bool present,
-					  bool available,
-					  bool d_b,
-					  bool granularity);
+					  short present,
+					  short available,
+					  short d_b,
+					  short granularity);
 void printDescriptorEntry(struct DescriptorEntry entry);
-void initGDT();
+void initGdt();
 
 struct DescriptorEntry {
 	unsigned int lower_segment_limit : 16;
@@ -38,13 +39,13 @@ struct DescriptorEntry {
 	unsigned int higher_base_address : 8;
 } __attribute__((packed));
 
-struct GDTTable {
+struct GdtTable {
 	struct DescriptorEntry table[8];
-};
+} __attribute__((packed));
 
-struct GDTR {
+struct Gdtr {
 	int limit;
-	int *base_address;
+	void *base_address;
 } __attribute__((packed));
 
 enum TypeField {
@@ -66,11 +67,7 @@ enum TypeField {
 	EXECUTE_READ_CONFORMING_ACCESSED
 };
 
-enum TableEntryMeaning {
-	EMPTY_ENTRY,
-	CODE_SEGMENT,
-	DATA_SEGMENT
-};
+enum TableEntryMeaning { EMPTY_ENTRY, CODE_SEGMENT, DATA_SEGMENT };
 
-extern struct GDTR gdtr;
-extern struct GDTTable gdt_table;
+extern struct Gdtr gdtr;
+extern struct GdtTable gdt_table;
