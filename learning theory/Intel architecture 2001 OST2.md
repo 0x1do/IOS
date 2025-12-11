@@ -150,3 +150,17 @@ if it has a type of data, then it it will be called  big flag, if 0 moves SP by 
 **AVL** - Available flag, no specific usage
 
 Note that in 64 bit mode many fields are irrelevant:![alt text](image-4.png)
+
+Call gate - A way to move to a diffrent segment at a diffrent privilege level
+![alt text](image-5.png)
+
+### Exceptions
+Excpetions has 3 main categories:
+1. Fault - RIP points to a faulty instruction - recoverable
+2. Trap - RIP points to trapping instruction - recoverable
+3. Abort - RIP points to abort that terminates the program - unrecoverable
+
+## IDT
+There is a register named IDTR that basically points to the start of the table,
+so when an interrupt occurs the hardware finds the address with the offset using the register,
+and it'll push the state onto the stack and change RIP to the interrupt handler.

@@ -1,69 +1,84 @@
 #pragma once
 #include "kernel.h"
+#include "string.h"
 
-struct DescriptorEntry encodeDescriptor(unsigned int SegLimit,
-										int *BaseAddress,
-										unsigned int Type,
-										bool S,
-										unsigned int DPL,
-										bool P,
-										bool AVL,
-										bool L,
-										bool D_B,
-										bool G);
+struct DescriptorEntry
+encodeGlobalDescriptor(unsigned int segment_limit,
+					   void *base_address,
+					   unsigned int Type,
+					   short system,
+					   unsigned int descriptor_privilege_level,
+					   short present,
+					   short available,
+					   short long_mode,
+					   short d_b,
+					   short granularity);
 
-struct DescriptorEntry encode64BitDescriptor(unsigned int Type,
-											 bool S,
-											 unsigned int DPL,
-											 bool P,
-											 bool AVL,
-											 bool D_B,
-											 bool G);
-void printDescriptorEntry(struct DescriptorEntry entry);
-	void initGDT();
+#define ENCODE_64_BIT_DESCRIPTOR(type,                                         \
+								 system,                                       \
+								 descriptor_privilege_level,                   \
+								 present,                                      \
+								 available,                                    \
+								 d_b,                                          \
+								 granularity)                                  \
+	encodeGlobalDescriptor(0xfffff,                                            \
+						   0,                                                  \
+						   type,                                               \
+						   system,                                             \
+						   descriptor_privilege_level,                         \
+						   present,                                            \
+						   available,                                          \
+						   1,                                                  \
+						   d_b,                                                \
+						   granularity)
+
+void printGdtDescriptorEntry(struct DescriptorEntry entry);
+void initGdt();
 
 struct DescriptorEntry {
-	unsigned int SegLimit15_00 : 16;
-	unsigned int Base23_00 : 24;
+	unsigned int lower_segment_limit : 16;
+	unsigned int lower_base_address : 24;
 	unsigned int Type : 4;
-	unsigned int S : 1;
-	unsigned int DPL : 2;
-	unsigned int P : 1;
-	unsigned int SegLimit19_16 : 4;
-	unsigned int AVL : 1;
-	unsigned int L : 1;
-	unsigned int D_B : 1;
-	unsigned int G : 1;
-	unsigned int Base31_24 : 8;
+	unsigned int system : 1;
+	unsigned int descriptor_privilege_level : 2;
+	unsigned int present : 1;
+	unsigned int higher_segment_limit : 4;
+	unsigned int available : 1;
+	unsigned int long_mode : 1;
+	unsigned int d_b : 1;
+	unsigned int granularity : 1;
+	unsigned int higher_base_address : 8;
 } __attribute__((packed));
 
-struct GDTTable {
+struct GdtTable {
 	struct DescriptorEntry table[8];
-};
+} __attribute__((packed));
 
-struct GDTR {
+struct Gdtr {
 	int limit;
-	int *baseAddress;
-}__attribute__((packed));
+	void *base_address;
+} __attribute__((packed));
 
 enum TypeField {
 	READ_ONLY,
 	READ_ONLY_ACCESSED,
-    READ_WRITE,
-    READ_WRITE_ACCESSED,
-    READ_ONLY_EXPAND_DOWN,
-    READ_ONLY_EXPAND_DOWN_ACCESSED,
-    READ_WRITE_EXPAND_DOWN,
-    READ_WRITE_EXPAND_DOWN_ACCESSED,
-    EXECUTE_ONLY,
-    EXECUTE_ONLY_ACCESSED,
-    EXECUTE_READ,
-    EXECUTE_READ_ACCESSED,
-    EXECUTE_ONLY_CONFORMING,
-    EXECUTE_ONLY_CONFORMING_ACCESSED,
-    EXECUTE_READ_CONFORMING,
-    EXECUTE_READ_CONFORMING_ACCESSED
+	READ_WRITE,
+	READ_WRITE_ACCESSED,
+	READ_ONLY_EXPAND_DOWN,
+	READ_ONLY_EXPAND_DOWN_ACCESSED,
+	READ_WRITE_EXPAND_DOWN,
+	READ_WRITE_EXPAND_DOWN_ACCESSED,
+	EXECUTE_ONLY,
+	EXECUTE_ONLY_ACCESSED,
+	EXECUTE_READ,
+	EXECUTE_READ_ACCESSED,
+	EXECUTE_ONLY_CONFORMING,
+	EXECUTE_ONLY_CONFORMING_ACCESSED,
+	EXECUTE_READ_CONFORMING,
+	EXECUTE_READ_CONFORMING_ACCESSED
 };
 
-extern struct GDTR gdtr;
-extern struct GDTTable gdt_table;
+enum TableEntryMeaning { EMPTY_ENTRY, CODE_SEGMENT, DATA_SEGMENT };
+
+extern struct Gdtr gdtr;
+extern struct GdtTable gdt_table;

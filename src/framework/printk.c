@@ -1,123 +1,104 @@
 #include "printk.h"
 
-void setChar(char *str, int offset, int color)
+void printChar(char ch)
 {
-	static struct vga_char *vga_buf = (struct vga_char *)VGA_MEMORY;
-	vga_buf[offset].character = *str;
-	vga_buf[offset].attribute = color;
+	extern struct flanterm_context *ft_ctx;
+	flanterm_write(ft_ctx, &ch, 1);
 }
 
-char *uint_to_str(unsigned int value, int base)
+void puts(char *str)
 {
-	char buf[32];
-	static char retbuf[33];
-	retbuf[0] = '\0';
-	int i = 0;
-
-	if (value == 0) {
-		retbuf[0] = '0';
-		retbuf[1] = '\0';
-		return retbuf;
-	}
-
-	while (value > 0 && i < 32) {
-		buf[i] = DIGITS[value % base];
-		value /= base;
-		i++;
-	}
-
-	for (int j = i - 1; j >= 0; j--) {
-		retbuf[i - j - 1] = buf[j];
-	}
-
-	retbuf[i] = '\0';
-
-	return retbuf;
+	while (*str != '\0')
+		printChar(*str++);
 }
 
-char *int_to_str(int value, int base)
+void longEvaluation(va_list *args, char *str)
 {
-	if (value >= 0) {
-		return uint_to_str(value, base);
+	char buf[65];
+	str++;
+	switch (*str) {
+	case UNSIGNED_DECIMAL: {
+		puts(ulongToStr(va_arg(*args, unsigned long), DECIMAL, buf));
+		break;
 	}
-	value = -value;
-	char *buf = uint_to_str(value, base);
-	if (!buf)
-		return 0;
-
-	static char *negbuf;
-	*negbuf = '-';
-	*(negbuf + 1) = '\0';
-	int i;
-	for (i = 0; buf[i] != '\0'; i++) {
-		*(negbuf + 1 + i) = buf[i];
+	case SIGNED_DECIMAL: {
+		puts(ulongToStr(va_arg(*args, unsigned long), DECIMAL, buf));
+		break;
 	}
-	*(negbuf + 1 + i) = '\0';
-	return negbuf;
+	case UNSIGNED_HEX: {
+		puts(ulongToStr(va_arg(*args, unsigned long), HEX, buf));
+		break;
+	}
+	default: {
+		break;
+	}
+	}
 }
 
-void formatEvaluation(int *argp, int *offset, char ch)
+void formatEvaluation(va_list *args, char *str)
 {
-	switch ((enum FormatSpecifiers)ch) {
+	char return_buffer[33];
+	switch ((enum FormatSpecifiers) * str) {
 	case SIGNED_DECIMAL:
-		printk(int_to_str(*argp, 10));
+		puts(intToStr(va_arg(*args, int), DECIMAL, return_buffer));
 		break;
 	case UNSIGNED_DECIMAL:
-		printk(uint_to_str(*argp, 10));
+		puts(uintToStr(va_arg(*args, unsigned int), DECIMAL, return_buffer));
 		break;
 	case UNSIGNED_OCTAL:
-		printk(uint_to_str(*argp, 8));
+		puts(uintToStr(va_arg(*args, unsigned int), OCTAL, return_buffer));
 		break;
 	case UNSIGNED_HEX:
-		printk(uint_to_str(*argp, 16));
+		puts(uintToStr(va_arg(*args, unsigned int), HEX, return_buffer));
 		break;
 	case CHARACTER:
-		setChar((char *)argp, *offset, GREY);
+		printChar((char)va_arg(*args, int));
 		break;
 	case STRING:
-		printk((char *)*argp);
+		puts(va_arg(*args, char *));
 		break;
 	case POINTER_ADDRESS:
-		if((int)*argp == '\0') break;
-		printk("0x%x", (int)*argp);
+		printk("0x%lx", (unsigned long)va_arg(*args, void *));
 		break;
 	case MODULO:
-		static char mod = '%';
-		setChar(&mod, *offset, GREY);
+		printChar('%');
+		break;
+	default:
+		str--;
 		break;
 	}
 }
 
 void printk(char *str, ...)
 {
-	int *argp = (int *)&str;
-	argp += sizeof(str) / sizeof(int);
+	/*
+	 *	todo: implement va_list/va_arg/va_start
+	 */
+	va_list args;
+	va_start(args, str);
 
-	static int offset = 0;
 	while (*str != '\0') {
-		if (offset >= MAX_SCREEN_SIZE) {
-			offset = 0;
-		}
-		if (*str == '%') {
-			char nextChar = *(str + 1);
-			if(nextChar == '\0')
-			{
+		switch (*str) {
+		case '%':
+			str++;
+			switch (*str) {
+			case '\0':
+				return;
+			case 'l':
+				longEvaluation(&args, str);
 				str++;
-				continue;
+				break;
+			default:
+				formatEvaluation(&args, str);
+				break;
 			}
-			formatEvaluation(argp, &offset, nextChar);
-			argp++;
-			str += 2;
-			continue;
+			str++;
+			break;
+		default:
+			printChar(*str);
+			str++;
 		}
-		if (*str == '\n') {
-			offset += SCREEN_WIDTH - (offset % SCREEN_WIDTH);
-            setChar(str, offset, GREY);
-		    str++;
-            continue;
-		}
-        setChar(str, offset, GREY);
-		str++;
-		offset++;
 	}
+
+	va_end(args);
 }

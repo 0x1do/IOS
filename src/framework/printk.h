@@ -1,15 +1,11 @@
 #pragma once
-#define VGA_MEMORY 0xB8000
-#define DIGITS "0123456789abcdef"
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 25
-#define MAX_SCREEN_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT)
-#define GREY 0x07
+#include "flanterm.h"
+#include "string.h"
 
-struct vga_char {
-	char character;
-	char attribute;
-};
+typedef __builtin_va_list va_list;
+#define va_start __builtin_va_start
+#define va_arg __builtin_va_arg
+#define va_end __builtin_va_end
 
 enum FormatSpecifiers {
 	SIGNED_DECIMAL = 'd',
@@ -19,12 +15,20 @@ enum FormatSpecifiers {
 	CHARACTER = 'c',
 	STRING = 's',
 	POINTER_ADDRESS = 'p',
-	MODULO = '%'
+	MODULO = '%',
+	LONG = 'l'
 };
 
-void setChar(char *str, int offset, int color);
+enum CountBase {
+	BINARY = 0,
+	OCTAL = 8,
+	DECIMAL = 10,
+	HEX = 16
+};
+
+void printChar(char ch);
+void puts(char *str);
 enum FormatSpecifiers getFormatSpecifier(char specifier);
-char *uint_to_str(unsigned int value, int base);
-char *int_to_str(int value, int base);
-void formatEvaluation(int *argp, int *offset, char ch);
+void longEvaluation(va_list *args, char *str);
+void formatEvaluation(va_list *args, char *str);
 void printk(char *str, ...);
