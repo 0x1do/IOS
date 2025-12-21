@@ -1,6 +1,10 @@
 #include "gdt.h"
+#include "printk.h"
+#include <stddef.h>
 
-struct DescriptorEntry
+extern void reloadSegments(void);
+
+struct GdtDescriptorEntry
 encodeGlobalDescriptor(unsigned int segment_limit,
 					   void *base_address,
 					   unsigned int type,
@@ -12,7 +16,7 @@ encodeGlobalDescriptor(unsigned int segment_limit,
 					   short d_b,
 					   short granularity)
 {
-	struct DescriptorEntry entry = {
+	struct GdtDescriptorEntry entry = {
 		.system = system,
 		.present = present,
 		.available = available,
@@ -31,8 +35,11 @@ encodeGlobalDescriptor(unsigned int segment_limit,
 	return entry;
 }
 
-void printGdtDescriptorEntry(struct DescriptorEntry entry)
+void printGdtDescriptorEntry(struct GdtDescriptorEntry entry)
 {
+	printk("============================================\n");
+	printk("               GDT entry                     \n");
+	printk("============================================\n");
 	printk("Segment Limit (15-00): 0x%x\n", entry.lower_segment_limit);
 	printk("Base Address (23-00): 0x%x\n", entry.lower_base_address);
 	printk("Type: %u\n", entry.Type);
@@ -48,20 +55,41 @@ void printGdtDescriptorEntry(struct DescriptorEntry entry)
 	printk("Base Address (31-24): 0x%x\n", entry.higher_base_address);
 }
 
+struct Gdt gdt;
 struct Gdtr gdtr;
-struct GdtTable gdt_table;
 
 void initGdt()
 {
-	gdtr.base_address = (void *)&gdt_table;
-	gdtr.limit = sizeof(gdt_table);
+	gdtr.base_address = (unsigned long long)&gdt;
+	gdtr.limit = (short)sizeof(gdt) - 1;
 
-	gdt_table.table[EMPTY_ENTRY] =
-		ENCODE_64_BIT_DESCRIPTOR(0, 0, 0, 0, 0, 0, 0);
-	gdt_table.table[CODE_SEGMENT] =
-		ENCODE_64_BIT_DESCRIPTOR(EXECUTE_READ, 1, 3, 1, 0, 1, 1);
-	gdt_table.table[DATA_SEGMENT] =
-		ENCODE_64_BIT_DESCRIPTOR(READ_WRITE, 1, 3, 1, 0, 1, 1);
+	/*
+	 * todo: define values instead of hardcoding values
+	 */
 
+	gdt.empty = ENCODE_64_BIT_DESCRIPTOR(0, 0, 0, 0, 0, 0, 0);
+	gdt.kernel_code = ENCODE_64_BIT_DESCRIPTOR(EXECUTE_READ, 1, 0, 1, 0, 0, 1);
+	gdt.kernel_data = ENCODE_64_BIT_DESCRIPTOR(READ_WRITE, 1, 0, 1, 0, 1, 1);
+
+	printGdtDescriptorEntry(gdt.kernel_code);
+	printk("GDTR base = %p, limit = %d\nGDTR address = %p\n",
+		   gdtr.base_address,
+		   (int)gdtr.limit,
+		   &gdtr);
 	__asm__ volatile("lgdt %0" : : "m"(gdtr));
+	__asm__ volatile("pushq %0\n"
+					 "leaq reload_CS(%%rip), %%rax\n"
+					 "pushq %%rax\n"
+					 "retfq\n"
+
+					 "reload_CS:\n"
+					 "movw $0x10, %%ax\n"
+					 "movw %%ax, %%ds\n"
+					 "movw %%ax, %%es\n"
+					 "movw %%ax, %%fs\n"
+					 "movw %%ax, %%gs\n"
+					 "movw %%ax, %%ss\n"
+					 :
+					 : "i"(offsetof(struct Gdt, kernel_code))
+					 : "rax", "ax", "memory");
 }

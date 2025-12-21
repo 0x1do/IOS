@@ -1,6 +1,5 @@
 #pragma once
 #include "kernel.h"
-
 #define IDT_MAX_ENTRIES 256
 
 struct IdtDescriptorEntry {
@@ -12,28 +11,30 @@ struct IdtDescriptorEntry {
 	unsigned int reserved_1 : 1;
 	unsigned int descriptor_privilege_level : 2;
 	unsigned int present : 1;
-	unsigned long long higher_offset : 48;
+	unsigned int middle_offset : 16;      
+	unsigned long long higher_offset : 32;
 	unsigned int reserved_2 : 32;
 } __attribute__((packed));
+
+static_assert(sizeof(struct IdtDescriptorEntry) == 16,
+			  "IdtDescriptorEntry size is not 16 bytes");
 
 void initIdt();
 void printIdtDescriptorEntry(struct IdtDescriptorEntry entry);
 
-enum GateType {
-	INTERRUPT_GATE = 0XE,
-	TRAP_GATE = 0XF
-};
-
-struct IdtTable {
-	struct IdtDescriptorEntry table[IDT_MAX_ENTRIES];
-} __attribute__((packed));
+enum GateType { INTERRUPT_GATE = 0XE, TRAP_GATE = 0XF };
 
 struct Idtr {
-	unsigned int limit : 16; // calculated sizeof(entry)*entries-1, max value is
-							 // 16*256-1=4095
-	void *base_address;
+	short limit;
+	unsigned long long base_address;
 
 } __attribute__((packed));
 
-extern struct IdtTable *idt_table;
+struct IdtDescriptorEntry encodeInterruptDescriptor(void *offset,
+													short segment_selector,
+													enum GateType gate_type,
+													char dpl,
+													char p);
+
+extern struct IdtDescriptorEntry idtTable[IDT_MAX_ENTRIES];
 extern struct Idtr idtr;

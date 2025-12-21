@@ -1,4 +1,8 @@
 #include "kernel.h"
+#include "flanterm_utils.h"
+#include "gdt.h"
+#include "idt.h"
+#include "printk.h"
 
 __attribute__((used, section(".limine_requests"))) static volatile uint64_t
 	limine_base_revision[] = LIMINE_BASE_REVISION(4);
@@ -29,5 +33,8 @@ void _start(void)
 void kernelMain(void)
 {
 	initGdt();
-	printk("GDTR base = %p, limit = %lx\n", gdtr.base_address, gdtr.limit);
+
+	initIdt();
+
+	__asm__ volatile("int $3");
 }

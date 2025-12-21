@@ -1,8 +1,6 @@
 #pragma once
-#include "kernel.h"
-#include "string.h"
 
-struct DescriptorEntry
+struct GdtDescriptorEntry
 encodeGlobalDescriptor(unsigned int segment_limit,
 					   void *base_address,
 					   unsigned int Type,
@@ -32,10 +30,10 @@ encodeGlobalDescriptor(unsigned int segment_limit,
 						   d_b,                                                \
 						   granularity)
 
-void printGdtDescriptorEntry(struct DescriptorEntry entry);
+void printGdtDescriptorEntry(struct GdtDescriptorEntry entry);
 void initGdt();
 
-struct DescriptorEntry {
+struct GdtDescriptorEntry {
 	unsigned int lower_segment_limit : 16;
 	unsigned int lower_base_address : 24;
 	unsigned int Type : 4;
@@ -50,13 +48,18 @@ struct DescriptorEntry {
 	unsigned int higher_base_address : 8;
 } __attribute__((packed));
 
-struct GdtTable {
-	struct DescriptorEntry table[8];
+static_assert(sizeof(struct GdtDescriptorEntry) == 8,
+			  "DescriptorEntry size is not 8 bytes");
+
+struct Gdt {
+	struct GdtDescriptorEntry empty;
+	struct GdtDescriptorEntry kernel_code;
+	struct GdtDescriptorEntry kernel_data;
 } __attribute__((packed));
 
 struct Gdtr {
-	int limit;
-	void *base_address;
+	short limit;
+	unsigned long long base_address;
 } __attribute__((packed));
 
 enum TypeField {
@@ -78,7 +81,5 @@ enum TypeField {
 	EXECUTE_READ_CONFORMING_ACCESSED
 };
 
-enum TableEntryMeaning { EMPTY_ENTRY, CODE_SEGMENT, DATA_SEGMENT };
-
 extern struct Gdtr gdtr;
-extern struct GdtTable gdt_table;
+extern struct GdtDescriptorEntry table[8];
