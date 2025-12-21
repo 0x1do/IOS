@@ -15,19 +15,23 @@ void puts(char *str)
 void longEvaluation(va_list *args, char *str)
 {
 	char buf[65];
-	switch (*(str + 1)) {
-	case UNSIGNED_DECIMAL:
+	str++;
+	switch (*str) {
+	case UNSIGNED_DECIMAL: {
 		puts(ulongToStr(va_arg(*args, unsigned long), DECIMAL, buf));
-		str++;
 		break;
-	case SIGNED_DECIMAL:
+	}
+	case SIGNED_DECIMAL: {
 		puts(ulongToStr(va_arg(*args, unsigned long), DECIMAL, buf));
-		str++;
 		break;
-	case UNSIGNED_HEX:
+	}
+	case UNSIGNED_HEX: {
 		puts(ulongToStr(va_arg(*args, unsigned long), HEX, buf));
-		str++;
 		break;
+	}
+	default: {
+		break;
+	}
 	}
 }
 
@@ -53,14 +57,14 @@ void formatEvaluation(va_list *args, char *str)
 	case STRING:
 		puts(va_arg(*args, char *));
 		break;
-	case LONG:
-		longEvaluation(args, str);
-		break;
 	case POINTER_ADDRESS:
 		printk("0x%lx", (unsigned long)va_arg(*args, void *));
 		break;
 	case MODULO:
 		printChar('%');
+		break;
+	default:
+		str--;
 		break;
 	}
 }
@@ -75,11 +79,19 @@ void printk(char *str, ...)
 
 	while (*str != '\0') {
 		switch (*str) {
-		case ('%'):
+		case '%':
 			str++;
-			if (*str == '\0')
-				continue;
-			formatEvaluation(&args, str);
+			switch (*str) {
+			case '\0':
+				return;
+			case 'l':
+				longEvaluation(&args, str);
+				str++;
+				break;
+			default:
+				formatEvaluation(&args, str);
+				break;
+			}
 			str++;
 			break;
 		default:

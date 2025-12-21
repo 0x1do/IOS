@@ -6,4 +6,4 @@
 #include "limine.h"
 
 struct flanterm_context *
-init_terminal(struct limine_framebuffer_request framebuffer_request);
+initTerminal(struct limine_framebuffer_request framebuffer_request);

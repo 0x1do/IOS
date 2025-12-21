@@ -1,0 +1,4 @@
+file iso/boot/kernel.elf
+target remote :1234
+b initGdt
+c

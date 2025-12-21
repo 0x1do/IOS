@@ -1,4 +1,8 @@
 #include "kernel.h"
+#include "flanterm_utils.h"
+#include "gdt.h"
+#include "idt.h"
+#include "printk.h"
 
 __attribute__((used, section(".limine_requests"))) static volatile uint64_t
 	limine_base_revision[] = LIMINE_BASE_REVISION(4);
@@ -19,15 +23,18 @@ struct flanterm_context *ft_ctx;
 
 void _start(void)
 {
-	ft_ctx = init_terminal(framebuffer_request);
+	ft_ctx = initTerminal(framebuffer_request);
 	kernelMain();
-	while (1)
-		;
-	;
+	while (1) {
+		__asm__("hlt");
+	}
 }
 
 void kernelMain(void)
 {
 	initGdt();
-	printDescriptorEntry(gdt_table.table[0]);
+
+	initIdt();
+
+	__asm__ volatile("int $3");
 }

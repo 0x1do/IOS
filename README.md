@@ -18,12 +18,16 @@ A detailed breakdown table will be added soon.
 
 ## Current Progress
 
-I’ve successfully built a **64 bit minimal OS** that **Limine can boot** and a simple implementation of printk (that gets framebuffer (not VGA!!!) and supports format string) and GDT. 
+I’ve successfully built a **64 bit minimal OS** that **Limine can boot** and a simple implementation of printk (that gets framebuffer (not VGA!!!) and supports format string), segments and simple interrupts
 
 ---
 
 ## Next Steps
 
-Implement IDT
+physical page frame allocator
+paging
+schedular
+small usermode - add another ring, syscalls, etc
+drivers - keyboard/mouse/screen
 
 Maybe rewrite in C++

@@ -1,7 +1,7 @@
 #include "flanterm_utils.h"
 
 struct flanterm_context *
-init_terminal(struct limine_framebuffer_request framebuffer_request)
+initTerminal(struct limine_framebuffer_request framebuffer_request)
 {
 	struct limine_framebuffer *fb =
 		framebuffer_request.response->framebuffers[0];

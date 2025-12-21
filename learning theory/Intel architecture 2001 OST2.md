@@ -159,4 +159,12 @@ Excpetions has 3 main categories:
 1. Fault - RIP points to a faulty instruction - recoverable
 2. Trap - RIP points to trapping instruction - recoverable
 3. Abort - RIP points to abort that terminates the program - unrecoverable
+
 ## IDT
+There is a register named IDTR that basically points to the start of the table,
+so when an interrupt occurs the hardware finds the address with the offset using the register,
+and it'll push the state onto the stack and change RIP to the interrupt handler.
+
+### Interrupt handler
+
+because the function called directly by the CPU, the function need to end with iretq opcode (unlike normal ret).

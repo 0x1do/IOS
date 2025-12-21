@@ -1,30 +1,39 @@
 #pragma once
-#include "framework/string.h"
-#include "kernel.h"
 
-struct DescriptorEntry encodeDescriptor(unsigned int segment_limit,
-										void *base_address,
-										unsigned int Type,
-										short system,
-										unsigned int descriptor_privilege_level,
-										short present,
-										short available,
-										short long_mode,
-										short d_b,
-										short granularity);
+struct GdtDescriptorEntry
+encodeGlobalDescriptor(unsigned int segment_limit,
+					   void *base_address,
+					   unsigned int Type,
+					   short system,
+					   unsigned int descriptor_privilege_level,
+					   short present,
+					   short available,
+					   short long_mode,
+					   short d_b,
+					   short granularity);
 
-struct DescriptorEntry
-encode64BitDescriptor(unsigned int Type,
-					  short system,
-					  unsigned int descriptor_privilege_level,
-					  short present,
-					  short available,
-					  short d_b,
-					  short granularity);
-void printDescriptorEntry(struct DescriptorEntry entry);
+#define ENCODE_64_BIT_DESCRIPTOR(type,                                         \
+								 system,                                       \
+								 descriptor_privilege_level,                   \
+								 present,                                      \
+								 available,                                    \
+								 d_b,                                          \
+								 granularity)                                  \
+	encodeGlobalDescriptor(0xfffff,                                            \
+						   0,                                                  \
+						   type,                                               \
+						   system,                                             \
+						   descriptor_privilege_level,                         \
+						   present,                                            \
+						   available,                                          \
+						   1,                                                  \
+						   d_b,                                                \
+						   granularity)
+
+void printGdtDescriptorEntry(struct GdtDescriptorEntry entry);
 void initGdt();
 
-struct DescriptorEntry {
+struct GdtDescriptorEntry {
 	unsigned int lower_segment_limit : 16;
 	unsigned int lower_base_address : 24;
 	unsigned int Type : 4;
@@ -39,13 +48,18 @@ struct DescriptorEntry {
 	unsigned int higher_base_address : 8;
 } __attribute__((packed));
 
-struct GdtTable {
-	struct DescriptorEntry table[8];
+static_assert(sizeof(struct GdtDescriptorEntry) == 8,
+			  "DescriptorEntry size is not 8 bytes");
+
+struct Gdt {
+	struct GdtDescriptorEntry empty;
+	struct GdtDescriptorEntry kernel_code;
+	struct GdtDescriptorEntry kernel_data;
 } __attribute__((packed));
 
 struct Gdtr {
-	int limit;
-	void *base_address;
+	short limit;
+	unsigned long long base_address;
 } __attribute__((packed));
 
 enum TypeField {
@@ -67,7 +81,5 @@ enum TypeField {
 	EXECUTE_READ_CONFORMING_ACCESSED
 };
 
-enum TableEntryMeaning { EMPTY_ENTRY, CODE_SEGMENT, DATA_SEGMENT };
-
 extern struct Gdtr gdtr;
-extern struct GdtTable gdt_table;
+extern struct GdtDescriptorEntry table[8];
