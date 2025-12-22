@@ -39,12 +39,5 @@ ISR(31);
 
 #undef ISR
 
-typedef struct __attribute__((packed)) {
-	unsigned long gs, fs, es, ds;
-	unsigned long rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax;
-	unsigned long int_no, err_code;
-	unsigned long rip, cs, eflags, userrsp, ss;
-} registers;
-
 void isrHandler(int num);
 void initIsr(struct IdtDescriptorEntry (*)[256]);

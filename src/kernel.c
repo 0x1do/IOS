@@ -2,6 +2,7 @@
 #include "flanterm_utils.h"
 #include "gdt.h"
 #include "idt.h"
+#include "page_alloc.h"
 #include "printk.h"
 
 __attribute__((used, section(".limine_requests"))) static volatile uint64_t
@@ -33,8 +34,23 @@ void _start(void)
 void kernelMain(void)
 {
 	initGdt();
-
 	initIdt();
+	initAllocator();
 
 	__asm__ volatile("int $3");
+
+	char *a = kalloc(5);
+	char *b = kalloc(5000);
+	char *c = krealloc(b, 100);
+	char *d = krealloc(a, 5000);
+	b = "hfasdjklfsdhjkl";
+	printk("\n\n============malloced ptr================\n");
+	printk("        Aoldptr: %p\n", a);
+	printk("        Boldptr: %p\n", b);
+	printk("        Aptr: %p\n", c);
+	printk("        Boldptr: %p\n", d);
+	printk("     value of ptr: %s\n", b);
+	printk("========================================\n");
+
+	kfree(b);
 }

@@ -5,16 +5,16 @@
 extern void reloadSegments(void);
 
 struct GdtDescriptorEntry
-encodeGlobalDescriptor(unsigned int segment_limit,
+encodeGlobalDescriptor(uint32_t segment_limit,
 					   void *base_address,
-					   unsigned int type,
-					   short system,
-					   unsigned int descriptor_privilege_level,
-					   short present,
-					   short available,
-					   short long_mode,
-					   short d_b,
-					   short granularity)
+					   uint32_t type,
+					   uint16_t system,
+					   uint32_t descriptor_privilege_level,
+					   uint16_t present,
+					   uint16_t available,
+					   uint16_t long_mode,
+					   uint16_t d_b,
+					   uint16_t granularity)
 {
 	struct GdtDescriptorEntry entry = {
 		.system = system,
@@ -29,8 +29,8 @@ encodeGlobalDescriptor(unsigned int segment_limit,
 		.lower_segment_limit = segment_limit & 0xffff,
 		.higher_segment_limit = (segment_limit >> 16) & 0xf,
 
-		.lower_base_address = ((unsigned long)base_address & 0x00ffffff),
-		.higher_base_address = ((unsigned long)base_address >> 24) & 0xff
+		.lower_base_address = ((uint64_t)base_address & 0x00ffffff),
+		.higher_base_address = ((uint64_t)base_address >> 24) & 0xff
 	};
 	return entry;
 }
@@ -60,8 +60,8 @@ struct Gdtr gdtr;
 
 void initGdt()
 {
-	gdtr.base_address = (unsigned long long)&gdt;
-	gdtr.limit = (short)sizeof(gdt) - 1;
+	gdtr.base_address = (uint64_t)&gdt;
+	gdtr.limit = (uint16_t)sizeof(gdt) - 1;
 
 	/*
 	 * todo: define values instead of hardcoding values

@@ -1,16 +1,17 @@
 #pragma once
+#include "kernel.h"
 
 struct GdtDescriptorEntry
-encodeGlobalDescriptor(unsigned int segment_limit,
+encodeGlobalDescriptor(uint32_t segment_limit,
 					   void *base_address,
-					   unsigned int Type,
-					   short system,
-					   unsigned int descriptor_privilege_level,
-					   short present,
-					   short available,
-					   short long_mode,
-					   short d_b,
-					   short granularity);
+					   uint32_t Type,
+					   uint16_t system,
+					   uint32_t descriptor_privilege_level,
+					   uint16_t present,
+					   uint16_t available,
+					   uint16_t long_mode,
+					   uint16_t d_b,
+					   uint16_t granularity);
 
 #define ENCODE_64_BIT_DESCRIPTOR(type,                                         \
 								 system,                                       \
@@ -34,18 +35,18 @@ void printGdtDescriptorEntry(struct GdtDescriptorEntry entry);
 void initGdt();
 
 struct GdtDescriptorEntry {
-	unsigned int lower_segment_limit : 16;
-	unsigned int lower_base_address : 24;
-	unsigned int Type : 4;
-	unsigned int system : 1;
-	unsigned int descriptor_privilege_level : 2;
-	unsigned int present : 1;
-	unsigned int higher_segment_limit : 4;
-	unsigned int available : 1;
-	unsigned int long_mode : 1;
-	unsigned int d_b : 1;
-	unsigned int granularity : 1;
-	unsigned int higher_base_address : 8;
+	uint32_t lower_segment_limit : 16;
+	uint32_t lower_base_address : 24;
+	uint32_t Type : 4;
+	uint32_t system : 1;
+	uint32_t descriptor_privilege_level : 2;
+	uint32_t present : 1;
+	uint32_t higher_segment_limit : 4;
+	uint32_t available : 1;
+	uint32_t long_mode : 1;
+	uint32_t d_b : 1;
+	uint32_t granularity : 1;
+	uint32_t higher_base_address : 8;
 } __attribute__((packed));
 
 static_assert(sizeof(struct GdtDescriptorEntry) == 8,
@@ -58,8 +59,8 @@ struct Gdt {
 } __attribute__((packed));
 
 struct Gdtr {
-	short limit;
-	unsigned long long base_address;
+	uint16_t limit;
+	uint64_t base_address;
 } __attribute__((packed));
 
 enum TypeField {

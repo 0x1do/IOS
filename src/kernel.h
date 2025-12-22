@@ -1,6 +1,5 @@
 #pragma once
 #define NULL ((void *)0)
-typedef unsigned long size_t;
-typedef unsigned char uint8_t;
-
+#include <stdint.h>
+#include <stddef.h>
 void kernelMain(void);
