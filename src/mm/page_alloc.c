@@ -19,6 +19,9 @@ void initAllocator()
  */
 void *kalloc(int size)
 {
+	if (size == 0) {
+		return NULL;
+	}
 	int pages_amount =
 		(size < PAGE_SIZE) ? 1 : (size + PAGE_SIZE - 1) / PAGE_SIZE;
 	int found_pages = 0;
@@ -44,25 +47,30 @@ void *kalloc(int size)
 				}
 
 				if (k == pages_amount) {
-					// Mark these pages as allocated
+					/* Mark these pages as allocated */
 					for (int l = 0; l < pages_amount; l++) {
 						int bit_index = (i * 8 + j + l) / 8;
 						int bit_offset = (i * 8 + j + l) % 8;
 						bitmap[bit_index] |= (1 << bit_offset);
 					}
-
-					return addr;
+					uint16_t *size_field = (uint16_t *)addr;
+					*size_field = pages_amount;
+					return (void *)((uint64_t)addr + sizeof(uint16_t));
 				}
 			}
 		}
 	}
 
-	// No free pages found
+	/* No free pages found */
 	return NULL;
 }
 
 void *krealloc(void *addr, uint64_t new_size)
 {
+	if (new_size == 0) {
+		kfree(addr);
+		return NULL;
+	}
 	uint64_t old_addr = (uint64_t)addr;
 	uint64_t page_num = (old_addr - first_page) / PAGE_SIZE;
 
@@ -81,13 +89,20 @@ void *krealloc(void *addr, uint64_t new_size)
 		return NULL;
 	}
 
-	memcpy(new_addr, addr, page_num * PAGE_SIZE);
+	memcpy(new_addr, addr, new_pages * PAGE_SIZE);
 	kfree(addr);
 	return new_addr;
 }
 
 void kfree(void *addr)
 {
-	uint8_t page_num = ((uint64_t)addr - first_page) / PAGE_SIZE;
-	bitmap[page_num / 8] &= ~(1 << (page_num % 8));
+	if ((uint64_t)addr >= first_page && (uint64_t)addr <= last_page) {
+		void *chunk_start = &addr - sizeof(uint16_t);
+		uint16_t size_field = *(uint16_t *)chunk_start;
+		uint8_t page_num = (uint64_t)(chunk_start - first_page) / PAGE_SIZE;
+
+		for (int i = page_num; i < page_num + ((size_field + PAGE_SIZE - 1) / PAGE_SIZE); i++) {
+			bitmap[page_num / 8] &= ~(1 << (page_num % 8));
+		}
+	}
 }
