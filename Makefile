@@ -50,7 +50,10 @@ $(ISO): $(KERNEL)
 		-o $(ISO) $(ISO_DIR)
 
 run: $(ISO)
-	qemu-system-x86_64 -cdrom $(ISO)
+	qemu-system-x86_64 -D log.txt -d int -cdrom $(ISO)
+
+debug: $(ISO)
+	qemu-system-x86_64 -D log.txt -d int -cdrom $(ISO) -s -S
 
 debug: $(ISO)
 	qemu-system-x86_64 -cdrom $(ISO) -s -S
