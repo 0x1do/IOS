@@ -15,9 +15,9 @@ struct IdtDescriptorEntry encodeInterruptDescriptor(void *offset,
 	struct IdtDescriptorEntry entry = {
 		.lower_offset = addr & 0xffff,
 		.segment_selector = segment_selector,
-		.interrupt_stack_table = 0, // for now IST is not implemented so the
-									// entry for the stack will rely on DPL and
-									// because I only have 1 ring
+		.interrupt_stack_table = 0, /* for now IST is not implemented so the
+									 * entry for the stack will rely on DPL and
+									 * because I only have 1 ring */
 		.reserved = 0,
 		.gate_type = gate_type,
 		.reserved_1 = 0,

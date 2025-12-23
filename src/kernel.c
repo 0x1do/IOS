@@ -39,7 +39,7 @@ void kernelMain(void)
 
 	__asm__ volatile("int $3");
 
-	char *a = kalloc(5);
+	char *a = kalloc(3);
 	char *b = kalloc(5000);
 	char *c = krealloc(b, 100);
 	char *d = krealloc(a, 5000);

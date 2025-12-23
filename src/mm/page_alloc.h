@@ -1,7 +1,7 @@
 #pragma once
 #include "kernel.h"
 
-#define PHYSICAL_MEMORY_SIZE 1024 * 1024 /* 1 gb for now */
+#define PHYSICAL_MEMORY_SIZE 1024 * 1024 /* 1 mb for now */
 #define PAGE_SIZE 4096
 #define BITMAP_SIZE (PHYSICAL_MEMORY_SIZE / PAGE_SIZE / 8) /* in bytes */
 #define FREE 0

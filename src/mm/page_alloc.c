@@ -36,6 +36,8 @@ void *kalloc(int size)
 				int k = 0;
 				while (k < pages_amount) {
 					int next_bit_index = (i * 8 + j + k) / 8;
+					if (next_bit_index >= BITMAP_SIZE)
+						break;
 					int next_bit_offset = (i * 8 + j + k) % 8;
 
 					if ((bitmap[next_bit_index] & (1 << next_bit_offset)) ==
@@ -71,14 +73,14 @@ void *krealloc(void *addr, uint64_t new_size)
 		kfree(addr);
 		return NULL;
 	}
-	uint64_t old_addr = (uint64_t)addr;
-	uint64_t page_num = (old_addr - first_page) / PAGE_SIZE;
+	uint64_t old_addr = (uint64_t)addr - sizeof(uint16_t);
+	uint16_t old_size = *(uint16_t *)old_addr;
+	uint64_t page_idx = (old_addr - first_page) / PAGE_SIZE;
 
-	int new_pages =
+	uint64_t new_pages =
 		(new_size < PAGE_SIZE) ? 1 : (new_size + PAGE_SIZE - 1) / PAGE_SIZE;
-	if (new_size <= PAGE_SIZE * (page_num + 1)) {
-		int old_pages = (page_num + 1);
-		for (int i = old_pages - 1; i >= new_pages; i--) {
+	if (new_size <= (uint64_t)(PAGE_SIZE * (old_size + 1))) {
+		for (uint64_t i = page_idx; i >= new_pages; i--) {
 			kfree((void *)(i * PAGE_SIZE + first_page));
 		}
 		return addr;
@@ -89,20 +91,23 @@ void *krealloc(void *addr, uint64_t new_size)
 		return NULL;
 	}
 
-	memcpy(new_addr, addr, new_pages * PAGE_SIZE);
+	memcpy(new_addr, addr, MIN(new_pages, old_size) * PAGE_SIZE);
 	kfree(addr);
 	return new_addr;
 }
 
 void kfree(void *addr)
 {
-	if ((uint64_t)addr >= first_page && (uint64_t)addr <= last_page) {
-		void *chunk_start = &addr - sizeof(uint16_t);
+	if ((uint64_t)addr >= first_page &&
+		(uint64_t)addr < (first_page + PHYSICAL_MEMORY_SIZE)) {
+		uint64_t chunk_start = (uint64_t)addr - sizeof(uint16_t);
 		uint16_t size_field = *(uint16_t *)chunk_start;
-		uint8_t page_num = (uint64_t)(chunk_start - first_page) / PAGE_SIZE;
+		uint32_t page_num = (chunk_start - first_page) / PAGE_SIZE;
 
-		for (int i = page_num; i < page_num + ((size_field + PAGE_SIZE - 1) / PAGE_SIZE); i++) {
-			bitmap[page_num / 8] &= ~(1 << (page_num % 8));
+		for (uint32_t i = page_num;
+			 i < page_num + ((size_field + PAGE_SIZE - 1) / PAGE_SIZE);
+			 i++) {
+			bitmap[i / 8] &= ~(1 << (i % 8));
 		}
 	}
 }
