@@ -18,14 +18,15 @@ A detailed breakdown table will be added soon.
 
 ## Current Progress
 
-I’ve successfully built a **64 bit minimal OS** that **Limine can boot** and a simple implementation of printk (that gets framebuffer (not VGA!!!) and supports format string), segments and simple interrupts
+I’ve successfully built a **64 bit minimal OS** that **Limine can boot** and a simple implementation of printk (that gets framebuffer (not VGA!!!) and supports format string), segments, simple interrupts and physical page allocator using simple bitmap and each chunk have a metadata containing its size field
 
 ---
 
 ## Next Steps
 
-physical page frame allocator
+
 paging
+filesystem
 schedular
 small usermode - add another ring, syscalls, etc
 drivers - keyboard/mouse/screen

@@ -6,18 +6,18 @@
 struct IdtDescriptorEntry idtTable[IDT_MAX_ENTRIES];
 
 struct IdtDescriptorEntry encodeInterruptDescriptor(void *offset,
-													short segment_selector,
+													uint16_t segment_selector,
 													enum GateType gate_type,
 													char dpl,
 													char p)
 {
-	unsigned long addr = (unsigned long)offset;
+	uint64_t addr = (uint64_t)offset;
 	struct IdtDescriptorEntry entry = {
 		.lower_offset = addr & 0xffff,
 		.segment_selector = segment_selector,
-		.interrupt_stack_table = 0, // for now IST is not implemented so the
-									// entry for the stack will rely on DPL and
-									// because I only have 1 ring
+		.interrupt_stack_table = 0, /* for now IST is not implemented so the
+									 * entry for the stack will rely on DPL and
+									 * because I only have 1 ring */
 		.reserved = 0,
 		.gate_type = gate_type,
 		.reserved_1 = 0,
@@ -32,9 +32,9 @@ struct IdtDescriptorEntry encodeInterruptDescriptor(void *offset,
 
 void printIdtDescriptorEntry(struct IdtDescriptorEntry entry)
 {
-	unsigned long full_offset = (unsigned long)entry.lower_offset |
-		((unsigned long)entry.middle_offset << 16) |
-		((unsigned long)entry.higher_offset << 32);
+	uint64_t full_offset = (uint64_t)entry.lower_offset |
+		((uint64_t)entry.middle_offset << 16) |
+		((uint64_t)entry.higher_offset << 32);
 	printk("============================================\n");
 	printk("               IDT entry                     \n");
 	printk("============================================\n");
@@ -59,11 +59,10 @@ void initIdt()
 	initIsr(&idtTable);
 	struct Idtr idtr = {
 		.limit = IDT_MAX_ENTRIES * sizeof(struct IdtDescriptorEntry) - 1,
-		.base_address = (unsigned long long)idtTable
+		.base_address = (uint64_t)idtTable
 	};
 
 	__asm__ volatile("lidt %0" : : "m"(idtr));
 	__asm__ volatile("sti");
 	printk("Interrupts enabled (STI executed)\n");
 }
-

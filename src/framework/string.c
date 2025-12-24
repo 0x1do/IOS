@@ -1,6 +1,6 @@
 #include "string.h"
 
-char *uintToStr(unsigned int value, int base, char *return_buffer)
+char *uintToStr(uint32_t value, int base, char *return_buffer)
 {
 	char len = 32;
 	char buf[len];
@@ -29,14 +29,14 @@ char *uintToStr(unsigned int value, int base, char *return_buffer)
 char *intToStr(int value, int base, char *return_buffer)
 {
 	if (value >= 0) {
-		return uintToStr((unsigned int)value, base, return_buffer);
+		return uintToStr((uint32_t)value, base, return_buffer);
 	}
 	return_buffer[0] = '-';
-	uintToStr((unsigned int)-value, base, return_buffer + 1);
+	uintToStr((uint32_t)-value, base, return_buffer + 1);
 	return return_buffer;
 }
 
-char *ulongToStr(unsigned long value, int base, char *return_buffer)
+char *ulongToStr(uint64_t value, int base, char *return_buffer)
 {
 	char len = 64;
 	char buf[len];
@@ -62,10 +62,10 @@ char *ulongToStr(unsigned long value, int base, char *return_buffer)
 char *longToStr(long value, int base, char *return_buffer)
 {
 	if (value >= 0) {
-		return ulongToStr((unsigned long)value, base, return_buffer);
+		return ulongToStr((uint64_t)value, base, return_buffer);
 	} else {
 		return_buffer[0] = '-';
-		ulongToStr((unsigned long)(-value), base, return_buffer + 1);
+		ulongToStr((uint64_t)(-value), base, return_buffer + 1);
 		return return_buffer;
 	}
 }

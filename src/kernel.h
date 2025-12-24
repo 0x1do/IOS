@@ -1,6 +1,6 @@
 #pragma once
 #define NULL ((void *)0)
-typedef unsigned long size_t;
-typedef unsigned char uint8_t;
-
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#include <stddef.h>
+#include <stdint.h>
 void kernelMain(void);

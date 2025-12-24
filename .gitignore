@@ -1,3 +1,5 @@
 build/
 iso/
 .clang-format
+gdbscript
+.gdb_history

@@ -1,6 +1,6 @@
 CC = gcc-14
 LD = ld
-CFLAGS = -std=gnu23 -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -Wextra -Werror
+CFLAGS = -std=gnu23 -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -I./src/mm -Wextra -Werror
 
 ISO_DIR = iso
 BUILD_DIR = build
@@ -54,6 +54,9 @@ run: $(ISO)
 
 debug: $(ISO)
 	qemu-system-x86_64 -D log.txt -d int -cdrom $(ISO) -s -S
+
+debug: $(ISO)
+	qemu-system-x86_64 -cdrom $(ISO) -s -S
 
 clean:
 	rm -r $(BUILD_DIR)/*
