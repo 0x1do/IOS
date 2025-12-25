@@ -69,34 +69,34 @@ void formatEvaluation(va_list *args, char *str)
 	}
 }
 
-void printk(char *str, ...)
+void printk(char *fmt, ...)
 {
 	/*
-	 *	todo: implement va_list/va_arg/va_start
+	 *	TODO: implement va_list/va_arg/va_start
 	 */
 	va_list args;
-	va_start(args, str);
+	va_start(args, fmt);
 
-	while (*str != '\0') {
-		switch (*str) {
+	while (*fmt != '\0') {
+		switch (*fmt) {
 		case '%':
-			str++;
-			switch (*str) {
+			fmt++;
+			switch (*fmt) {
 			case '\0':
 				return;
 			case 'l':
-				longEvaluation(&args, str);
-				str++;
+				longEvaluation(&args, fmt);
+				fmt++;
 				break;
 			default:
-				formatEvaluation(&args, str);
+				formatEvaluation(&args, fmt);
 				break;
 			}
-			str++;
+			fmt++;
 			break;
 		default:
-			printChar(*str);
-			str++;
+			printChar(*fmt);
+			fmt++;
 		}
 	}
 

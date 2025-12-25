@@ -1,6 +1,6 @@
 CC = gcc-14
 LD = ld
-CFLAGS = -std=gnu23 -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -I./src/mm -Wextra -Werror
+CFLAGS = -std=gnu23 -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -I./src/mm -I./src/fs -Wextra -Werror
 
 ISO_DIR = iso
 BUILD_DIR = build
