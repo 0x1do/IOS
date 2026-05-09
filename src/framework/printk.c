@@ -66,6 +66,9 @@ void formatEvaluation(va_list *args, const char *str)
 	default:
 		str--;
 		break;
+	default:
+		str--;
+		break;
 	}
 }
 
