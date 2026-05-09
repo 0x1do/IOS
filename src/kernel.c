@@ -1,9 +1,16 @@
 #include "kernel.h"
+#include "allocator.h"
+#include "connection.h"
+#include "fs.h"
 #include "flanterm_utils.h"
+#include "fs/shell.h"
 #include "gdt.h"
 #include "idt.h"
+#include "keyboard.h"
 #include "page_alloc.h"
 #include "printk.h"
+#include "splash.h"
+#include "msg.h"
 
 __attribute__((used, section(".limine_requests"))) static volatile uint64_t
 	limine_base_revision[] = LIMINE_BASE_REVISION(4);
@@ -22,35 +29,30 @@ __attribute__((used, section(".limine_requests_end"))) static volatile uint64_t
 
 struct flanterm_context *ft_ctx;
 
+__attribute__((noreturn)) void _exit(int status)
+{
+	asm volatile("cli");
+	for (;;) {
+		asm volatile("hlt");
+	}
+}
+
 void _start(void)
 {
 	ft_ctx = initTerminal(framebuffer_request);
 	kernelMain();
-	while (1) {
-		__asm__("hlt");
-	}
+	_exit(0);
 }
 
 void kernelMain(void)
 {
 	initGdt();
 	initIdt();
-	initAllocator();
 
-	__asm__ volatile("int $3");
+	serial_init(COM1_BASE, 1);
+	clearKeyboardBuffer();
 
-	char *a = kalloc(3);
-	char *b = kalloc(5000);
-	char *c = krealloc(b, 100);
-	char *d = krealloc(a, 5000);
-	b = "hfasdjklfsdhjkl";
-	printk("\n\n============malloced ptr================\n");
-	printk("        Aoldptr: %p\n", a);
-	printk("        Boldptr: %p\n", b);
-	printk("        Aptr: %p\n", c);
-	printk("        Boldptr: %p\n", d);
-	printk("     value of ptr: %s\n", b);
-	printk("========================================\n");
 
-	kfree(b);
+	printk("===================================\n");
+	initFs();
 }

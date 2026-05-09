@@ -19,10 +19,9 @@ OBJS := $(ASM_OBJECT) $(C_OBJS)
 
 all: $(ISO)
 
-
-
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
+	@echo "Using CFLAGS: $(CFLAGS)"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s

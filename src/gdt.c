@@ -64,7 +64,7 @@ void initGdt()
 	gdtr.limit = (uint16_t)sizeof(gdt) - 1;
 
 	/*
-	 * todo: define values instead of hardcoding values
+	 * TODO: define values instead of hardcoding values
 	 */
 
 	gdt.empty = ENCODE_64_BIT_DESCRIPTOR(0, 0, 0, 0, 0, 0, 0);

@@ -1,7 +1,7 @@
 #include "isr.h"
+#include "kernel.h"
 #include "mem.h"
 #include "printk.h"
-
 static void (*const isr_handlers[ISR_COUNT])(void) = {
 	isr0,  isr1,  isr2,	 isr3,	isr4,  isr5,  isr6,	 isr7,	isr8,  isr9,  isr10,
 	isr11, isr12, isr13, isr14, isr15, isr16, isr17, isr18, isr19, isr20, isr21,
@@ -49,14 +49,11 @@ void isrHandler(int num)
 	} else {
 		printk("Interrupt: %d\n", num);
 	}
-
 	printk("===============================\n");
 
 	if (num > 32) {
 		printk("System halted.\n");
-		for (;;) {
-			__asm__ volatile("hlt");
-		}
+		_exit(0);
 	}
 }
 

@@ -4,12 +4,16 @@
 static uint64_t first_page;
 static uint64_t last_page = PHYSICAL_MEMORY_SIZE / PAGE_SIZE;
 uint8_t bitmap[BITMAP_SIZE];
+uint16_t page_counts[BITMAP_SIZE * 8];
 
 void initAllocator()
 {
-	first_page = (uint64_t)&endkernel;
+	first_page = ((uint64_t)&endkernel + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	for (int i = 0; i < BITMAP_SIZE; i++) {
 		bitmap[i] = FREE;
+	}
+	for (int i = 0; i < BITMAP_SIZE * 8; i++) {
+		page_counts[i] = 0;
 	}
 	bitmap[0] |= (1 << 0);
 }
@@ -17,49 +21,29 @@ void initAllocator()
 /* Finds the first freed page(s) in the bitmap and returns its address
  * It will allocate the amount of pages closest to @size (rounding up)
  */
-void *kalloc(int size)
+void *kalloc(size_t size)
 {
-	if (size == 0) {
+	if (size == 0)
 		return NULL;
-	}
-	int pages_amount =
+
+	int pages_needed =
 		(size < PAGE_SIZE) ? 1 : (size + PAGE_SIZE - 1) / PAGE_SIZE;
-	int found_pages = 0;
+	int total_pages = BITMAP_SIZE * 8;
+	int run_start = 0;
+	int run_len = 0;
 
-	for (int i = 0; i < BITMAP_SIZE; i++) {
-		for (int j = 0; j < 8; j++) {
-			if ((bitmap[i] & (1 << j)) == FREE) {
-				uint64_t page_num = (i * 8) + j;
-				void *addr = (void *)(page_num * PAGE_SIZE + first_page);
-
-				/* How many free pages in a row we can find */
-				int k = 0;
-				while (k < pages_amount) {
-					int next_bit_index = (i * 8 + j + k) / 8;
-					if (next_bit_index >= BITMAP_SIZE)
-						break;
-					int next_bit_offset = (i * 8 + j + k) % 8;
-
-					if ((bitmap[next_bit_index] & (1 << next_bit_offset)) ==
-						FREE) {
-						k++;
-					} else {
-						break;
-					}
-				}
-
-				if (k == pages_amount) {
-					/* Mark these pages as allocated */
-					for (int l = 0; l < pages_amount; l++) {
-						int bit_index = (i * 8 + j + l) / 8;
-						int bit_offset = (i * 8 + j + l) % 8;
-						bitmap[bit_index] |= (1 << bit_offset);
-					}
-					uint16_t *size_field = (uint16_t *)addr;
-					*size_field = pages_amount;
-					return (void *)((uint64_t)addr + sizeof(uint16_t));
-				}
+	for (int p = 0; p < total_pages; p++) {
+		if ((bitmap[p / 8] & (1 << (p % 8))) == FREE) {
+			if (run_len == 0)
+				run_start = p;
+			if (++run_len == pages_needed) {
+				for (int i = run_start; i < run_start + pages_needed; i++)
+					bitmap[i / 8] |= (1 << (i % 8));
+				page_counts[run_start] = pages_needed;
+				return (void *)((uint64_t)run_start * PAGE_SIZE + first_page);
 			}
+		} else {
+			run_len = 0;
 		}
 	}
 
@@ -70,44 +54,42 @@ void *kalloc(int size)
 void *krealloc(void *addr, uint64_t new_size)
 {
 	if (new_size == 0) {
-		kfree(addr);
+		page_free(addr);
 		return NULL;
 	}
-	uint64_t old_addr = (uint64_t)addr - sizeof(uint16_t);
-	uint16_t old_size = *(uint16_t *)old_addr;
-	uint64_t page_idx = (old_addr - first_page) / PAGE_SIZE;
 
-	uint64_t new_pages =
+	uint32_t page_idx = ((uint64_t)addr - first_page) / PAGE_SIZE;
+	uint16_t old_pages = page_counts[page_idx];
+	uint16_t new_pages =
 		(new_size < PAGE_SIZE) ? 1 : (new_size + PAGE_SIZE - 1) / PAGE_SIZE;
-	if (new_size <= (uint64_t)(PAGE_SIZE * (old_size + 1))) {
-		for (uint64_t i = page_idx; i >= new_pages; i--) {
-			kfree((void *)(i * PAGE_SIZE + first_page));
-		}
+
+	/* Shrink in-place: free trailing pages */
+	if (new_pages <= old_pages) {
+		for (uint32_t i = page_idx + new_pages; i < page_idx + old_pages; i++)
+			bitmap[i / 8] &= ~(1 << (i % 8));
+		page_counts[page_idx] = new_pages;
 		return addr;
 	}
 
+	/* Grow: allocate new, copy, free old */
 	void *new_addr = kalloc(new_size);
-	if (new_addr == NULL) {
+	if (!new_addr)
 		return NULL;
-	}
-
-	memcpy(new_addr, addr, MIN(new_pages, old_size) * PAGE_SIZE);
-	kfree(addr);
+	memcpy(new_addr, addr, old_pages * PAGE_SIZE);
+	page_free(addr);
 	return new_addr;
 }
 
-void kfree(void *addr)
+void page_free(void *addr)
 {
 	if ((uint64_t)addr >= first_page &&
 		(uint64_t)addr < (first_page + PHYSICAL_MEMORY_SIZE)) {
-		uint64_t chunk_start = (uint64_t)addr - sizeof(uint16_t);
-		uint16_t size_field = *(uint16_t *)chunk_start;
-		uint32_t page_num = (chunk_start - first_page) / PAGE_SIZE;
+		uint32_t page_num = ((uint64_t)addr - first_page) / PAGE_SIZE;
+		uint16_t count = page_counts[page_num];
 
-		for (uint32_t i = page_num;
-			 i < page_num + ((size_field + PAGE_SIZE - 1) / PAGE_SIZE);
-			 i++) {
+		for (uint32_t i = page_num; i < page_num + count; i++) {
 			bitmap[i / 8] &= ~(1 << (i % 8));
 		}
+		page_counts[page_num] = 0;
 	}
 }

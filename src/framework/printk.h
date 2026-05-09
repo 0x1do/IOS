@@ -19,16 +19,11 @@ enum FormatSpecifiers {
 	LONG = 'l'
 };
 
-enum CountBase {
-	BINARY = 0,
-	OCTAL = 8,
-	DECIMAL = 10,
-	HEX = 16
-};
+enum CountBase { BINARY = 0, OCTAL = 8, DECIMAL = 10, HEX = 16 };
 
-void printChar(char ch);
-void puts(char *str);
+void putChar(char ch);
+void putS(char *str);
 enum FormatSpecifiers getFormatSpecifier(char specifier);
-void longEvaluation(va_list *args, char *str);
-void formatEvaluation(va_list *args, char *str);
-void printk(char *str, ...);
+void longEvaluation(va_list *args, const char *str);
+void formatEvaluation(va_list *args, const char *str);
+void printk(const char *str, ...);
