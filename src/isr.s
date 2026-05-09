@@ -59,7 +59,10 @@ isr%1:
     mov rdi, %1
     call isrHandler
     popAll
-    iretq
+    add rsp, 8
+.halt:
+    hlt
+    jmp .halt
 %endmacro
 
 ISR_NO_ERR 0

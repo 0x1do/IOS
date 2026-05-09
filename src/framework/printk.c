@@ -1,32 +1,32 @@
 #include "printk.h"
 
-void printChar(char ch)
+void putChar(char ch)
 {
 	extern struct flanterm_context *ft_ctx;
 	flanterm_write(ft_ctx, &ch, 1);
 }
 
-void puts(char *str)
+void putS(char *str)
 {
 	while (*str != '\0')
-		printChar(*str++);
+		putChar(*str++);
 }
 
-void longEvaluation(va_list *args, char *str)
+void longEvaluation(va_list *args, const char *str)
 {
 	char buf[65];
 	str++;
 	switch (*str) {
 	case UNSIGNED_DECIMAL: {
-		puts(ulongToStr(va_arg(*args, uint64_t), DECIMAL, buf));
+		putS(ulongToStr(va_arg(*args, uint64_t), DECIMAL, buf));
 		break;
 	}
 	case SIGNED_DECIMAL: {
-		puts(ulongToStr(va_arg(*args, uint64_t), DECIMAL, buf));
+		putS(ulongToStr(va_arg(*args, uint64_t), DECIMAL, buf));
 		break;
 	}
 	case UNSIGNED_HEX: {
-		puts(ulongToStr(va_arg(*args, uint64_t), HEX, buf));
+		putS(ulongToStr(va_arg(*args, uint64_t), HEX, buf));
 		break;
 	}
 	default: {
@@ -35,33 +35,33 @@ void longEvaluation(va_list *args, char *str)
 	}
 }
 
-void formatEvaluation(va_list *args, char *str)
+void formatEvaluation(va_list *args, const char *str)
 {
 	char return_buffer[33];
 	switch ((enum FormatSpecifiers) * str) {
 	case SIGNED_DECIMAL:
-		puts(intToStr(va_arg(*args, int), DECIMAL, return_buffer));
+		putS(intToStr(va_arg(*args, int), DECIMAL, return_buffer));
 		break;
 	case UNSIGNED_DECIMAL:
-		puts(uintToStr(va_arg(*args, uint32_t), DECIMAL, return_buffer));
+		putS(uintToStr(va_arg(*args, uint32_t), DECIMAL, return_buffer));
 		break;
 	case UNSIGNED_OCTAL:
-		puts(uintToStr(va_arg(*args, uint32_t), OCTAL, return_buffer));
+		putS(uintToStr(va_arg(*args, uint32_t), OCTAL, return_buffer));
 		break;
 	case UNSIGNED_HEX:
-		puts(uintToStr(va_arg(*args, uint32_t), HEX, return_buffer));
+		putS(uintToStr(va_arg(*args, uint32_t), HEX, return_buffer));
 		break;
 	case CHARACTER:
-		printChar((char)va_arg(*args, int));
+		putChar((char)va_arg(*args, int));
 		break;
 	case STRING:
-		puts(va_arg(*args, char *));
+		putS(va_arg(*args, char *));
 		break;
 	case POINTER_ADDRESS:
 		printk("0x%lx", (uint64_t)va_arg(*args, void *));
 		break;
 	case MODULO:
-		printChar('%');
+		putChar('%');
 		break;
 	default:
 		str--;
@@ -69,7 +69,7 @@ void formatEvaluation(va_list *args, char *str)
 	}
 }
 
-void printk(char *fmt, ...)
+void printk(const char *fmt, ...)
 {
 	/*
 	 *	TODO: implement va_list/va_arg/va_start
@@ -95,7 +95,7 @@ void printk(char *fmt, ...)
 			fmt++;
 			break;
 		default:
-			printChar(*fmt);
+			putChar(*fmt);
 			fmt++;
 		}
 	}

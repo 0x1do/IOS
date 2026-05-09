@@ -1,6 +1,14 @@
 CC = gcc-14
+QEMU  := qemu-system-x86_64
 LD = ld
-CFLAGS = -std=gnu23 -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -I./src/mm -I./src/fs -Wextra -Werror
+CFLAGS = -std=gnu23 -ffreestanding -nostdlib -m64 -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -I./src/mm -I./src/fs -Wextra
+ifeq ($(DEBUG), 1)
+    CFLAGS += -ggdb3
+else
+    CFLAGS += -g
+endif
+
+LINK_SOCK := /tmp/ioslink.sock
 
 ISO_DIR = iso
 BUILD_DIR = build
@@ -19,10 +27,9 @@ OBJS := $(ASM_OBJECT) $(C_OBJS)
 
 all: $(ISO)
 
-
-
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
+	@echo "Using CFLAGS: $(CFLAGS)"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
@@ -50,10 +57,19 @@ $(ISO): $(KERNEL)
 		-o $(ISO) $(ISO_DIR)
 
 run: $(ISO)
-	qemu-system-x86_64 -cdrom $(ISO)
+	$(QEMU) -cdrom $(ISO)
 
 debug: $(ISO)
-	qemu-system-x86_64 -cdrom $(ISO) -s -S
+	$(QEMU) -cdrom $(ISO) -s -S
+
+hub:
+	./scripts/ioslink-hub.py --sock $(LINK_SOCK) -v
+
+conn: $(ISO)
+	./scripts/qemu-conn.sh
+
+conn-debug: $(ISO)
+	./scripts/qemu-conn.sh -s -S
 
 clean:
 	rm -r $(BUILD_DIR)/*

@@ -4,3 +4,5 @@
 #include <stddef.h>
 #include <stdint.h>
 void kernelMain(void);
+
+__attribute__((noreturn)) void _exit(int status);
