@@ -14,7 +14,7 @@ SRC_DIR = src
 KERNEL = kernel.elf
 ISO = $(ISO_DIR)/ios.iso
 LIMINE = Limine
-LIMINE_BINARIES = limine-bios-cd.bin limine-uefi-cd.bin limine-bios.sys limine.conf
+LIMINE_BINARIES = limine-bios-cd.bin limine-uefi-cd.bin limine-bios.sys
 SRC := $(wildcard src/**/**/**/*.c) $(wildcard src/**/**/*.c) $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard Flanterm/src/*.c) $(wildcard Flanterm/src/**/*.c)
 ASM_SRC := $(wildcard src/**/**/**/*.s) $(wildcard src/**/**/*.s) $(wildcard src/**/*.s) $(wildcard src/*.s)
 ASM_OBJECT = $(patsubst $(SRC_DIR)/%.s, $(BUILD_DIR)/%.o, $(ASM_SRC))
@@ -44,7 +44,7 @@ $(KERNEL): $(OBJS)
 $(ISO): $(KERNEL)
 	mkdir -p $(BUILD_DIR)
 	@cp $(addprefix $(LIMINE)/,$(LIMINE_BINARIES)) $(ISO_DIR)/
-	cp $(LIMINE)/limine.conf .
+	cp limine.conf $(ISO_DIR)/
 	xorriso -as mkisofs \
 		-b limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
