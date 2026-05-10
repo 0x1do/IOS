@@ -1,0 +1,6 @@
+[submodule "Flanterm"]
+	path = Flanterm
+	url = https://codeberg.org/Mintsuki/Flanterm
+[submodule "Limine"]
+	path = Limine
+	url = https://codeberg.org/Limine/Limine.git
