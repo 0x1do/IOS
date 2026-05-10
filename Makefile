@@ -1,6 +1,12 @@
 CC = gcc-14
 LD = ld
-CFLAGS = -std=gnu23 -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -I./src/mm -Wextra -Werror
+CFLAGS = -std=gnu23 -ffreestanding -nostdlib -m64 -g -mcmodel=large -I./src -I./src/framework -I./Limine -I./Flanterm/src -I./Flanterm/src/flanterm_backends -I./src/mm -I./src/fs -Wextra -Werror
+
+# Host-side tools (the routing hub) build with normal hosted libc.
+HOST_CC = gcc
+HOST_CFLAGS = -O2 -g -Wall -Wextra
+
+LINK_SOCK := /tmp/ioslink.sock
 
 ISO_DIR = iso
 BUILD_DIR = build
@@ -10,18 +16,19 @@ ISO = $(ISO_DIR)/ios.iso
 LIMINE = Limine
 LIMINE_BINARIES = limine-bios-cd.bin limine-uefi-cd.bin limine-bios.sys limine.conf
 SRC := $(wildcard src/**/**/**/*.c) $(wildcard src/**/**/*.c) $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard Flanterm/src/*.c) $(wildcard Flanterm/src/**/*.c)
-#ASM_OBJECT = $(patsubst $(SRC_DIR)/%.s, $(BUILD_DIR)/%.o, $(filter %.s, $(SRC)))
 ASM_SRC := $(wildcard src/**/**/**/*.s) $(wildcard src/**/**/*.s) $(wildcard src/**/*.s) $(wildcard src/*.s)
 ASM_OBJECT = $(patsubst $(SRC_DIR)/%.s, $(BUILD_DIR)/%.o, $(ASM_SRC))
 
 C_OBJS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC))
 OBJS := $(ASM_OBJECT) $(C_OBJS)
 
+HUB_SRC = scripts/ioslink-hub.c
+HUB_BIN = scripts/ioslink-hub
+
 all: $(ISO)
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	@echo "Using CFLAGS: $(CFLAGS)"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
@@ -54,10 +61,21 @@ run: $(ISO)
 debug: $(ISO)
 	qemu-system-x86_64 -D log.txt -d int -cdrom $(ISO) -s -S
 
-debug: $(ISO)
-	qemu-system-x86_64 -cdrom $(ISO) -s -S
+$(HUB_BIN): $(HUB_SRC)
+	$(HOST_CC) $(HOST_CFLAGS) -o $@ $<
+
+hub: $(HUB_BIN)
+	$(HUB_BIN) --sock $(LINK_SOCK) -v
+
+conn: $(ISO) $(HUB_BIN)
+	HUB=$(HUB_BIN) ./scripts/qemu-conn.sh
+
+conn-debug: $(ISO) $(HUB_BIN)
+	HUB=$(HUB_BIN) ./scripts/qemu-conn.sh -s -S
 
 clean:
 	rm -r $(BUILD_DIR)/*
 	rm -r $(ISO_DIR)/*
-	
+	rm -f $(HUB_BIN)
+
+.PHONY: all run debug hub conn conn-debug clean

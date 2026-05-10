@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "msg.h"
 #include "printk.h"
 
 static int g_shift = 0;
@@ -18,7 +19,7 @@ void outb(uint16_t port, uint8_t val)
 uint8_t readKeyData()
 {
 	while ((inb(KEYBOARD_STATUS_PORT) & 0x01) == 0) {
-		/* until data is available */
+		msg_poll();
 	}
 	return inb(KEYBOARD_DATA_PORT);
 }

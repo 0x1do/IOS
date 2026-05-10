@@ -48,11 +48,31 @@ void kernelMain(void)
 {
 	initGdt();
 	initIdt();
+	allocator_init();
 
 	serial_init(COM1_BASE, 1);
 	clearKeyboardBuffer();
 
+	if (framebuffer_request.response && framebuffer_request.response->framebuffer_count > 0) {
+		struct limine_framebuffer *fb = framebuffer_request.response->framebuffers[0];
 
-	printk("===================================\n");
+		SplashFB sfb = {
+			.fb = (uint32_t *)fb->address,
+			.width = fb->width,
+			.height = fb->height,
+			.pitch4 = fb->pitch / 4,
+			.r_shift = fb->red_mask_shift,
+			.g_shift = fb->green_mask_shift,
+			.b_shift = fb->blue_mask_shift
+		};
+
+		int node_id = splash_screen(&sfb);
+		/* Reset flanterm: clear screen + home cursor, since prior boot
+		 * prints had advanced its cursor before the splash drew over them. */
+		printk("\x1b[2J\x1b[H");
+		msg_set_id(node_id);
+		printk("Node %d selected!\n", node_id);
+	}
+
 	initFs();
 }
