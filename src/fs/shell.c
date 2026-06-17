@@ -30,7 +30,7 @@ extern void printkBySel(DiskOperations *disk,
 						int num);
 void do_shell(void);
 void unknown_command(void);
-int separateString(char *buf, char *ptrs[]);
+int separateString(char *buf, char *ptrs[], int max);
 double get_percentage(unsigned int number, unsigned int total);
 
 int shell_cmd_format(int argc, char *argv[]);
@@ -110,8 +110,11 @@ static int write_string_to_file(const char *filename, const char *data, int len)
 		}
 	}
 
-	g_fsOprs.fileOprs->write(
-		&g_disk, &g_fsOprs, &g_currentDir, &entry, 0, len, data);
+	if (g_fsOprs.fileOprs->write(
+			&g_disk, &g_fsOprs, &g_currentDir, &entry, 0, len, data)) {
+		printk("write failed\n");
+		return -1;
+	}
 
 	return 0;
 }
@@ -313,7 +316,7 @@ void do_shell(void)
 		printk("[user/%s]# ", g_currentDir.name);
 		shell_readline(buf, sizeof(buf));
 
-		argc = separateString(buf, argv);
+		argc = separateString(buf, argv, sizeof(argv) / sizeof(argv[0]));
 		if (argc == 0)
 			continue;
 
@@ -510,8 +513,12 @@ int shell_cmd_fill(int argc, char *argv[])
 
 	memset(buffer, 'A', size);
 
-	g_fsOprs.fileOprs->write(
-		&g_disk, &g_fsOprs, &g_currentDir, &entry, 0, size, buffer);
+	if (g_fsOprs.fileOprs->write(
+			&g_disk, &g_fsOprs, &g_currentDir, &entry, 0, size, buffer)) {
+		printk("write failed\n");
+		kfree(buffer);
+		return -1;
+	}
 
 	kfree(buffer);
 
@@ -642,7 +649,7 @@ int shell_cmd_mkdirst(int argc, char *argv[])
 
 	sscank(argv[1], "%d", &count);
 	for (i = 0; i < count; i++) {
-		printk(buf, "%d", i);
+		intToStr(i, 10, buf);
 		result = g_fsOprs.mkdir(&g_disk, &g_fsOprs, &g_currentDir, buf, &entry);
 
 		if (result) {
@@ -688,6 +695,7 @@ int shell_cmd_cat(int argc, char *argv[])
 		memset(buf, 0, sizeof(buf));
 	}
 	printk("\n");
+	return 0;
 }
 
 int shell_cmd_clear(int argc, char *argv[])
@@ -871,11 +879,11 @@ void unknown_command(void)
 	printk("\n");
 }
 
-int separateString(char *buf, char *ptrs[])
+int separateString(char *buf, char *ptrs[], int max)
 {
 	int count = 0;
 
-	while (*buf) {
+	while (*buf && count < max) {
 		while (*buf && isspace(*buf))
 			buf++;
 		if (!*buf)

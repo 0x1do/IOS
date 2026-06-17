@@ -26,20 +26,22 @@ void fillDataBlock(DiskOperations *disk,
 				   uint32_t blockCount)
 {
 	uint8_t block[MAX_BLOCK_SIZE];
-	unsigned long remaining = length;
-	unsigned long bufOff = 0;
 	uint32_t i;
 
-	(void)offset;
 	for (i = 0; i < blockCount; i++) {
-		unsigned long chunk =
-			remaining < MAX_BLOCK_SIZE ? remaining : MAX_BLOCK_SIZE;
+		unsigned long blockStart = (unsigned long)i * MAX_BLOCK_SIZE;
+		unsigned long copyStart = offset > blockStart ? offset : blockStart;
+		unsigned long copyEnd = offset + length;
+
+		if (copyEnd > blockStart + MAX_BLOCK_SIZE)
+			copyEnd = blockStart + MAX_BLOCK_SIZE;
+
 		memset(block, 0, sizeof(block));
-		if (chunk > 0)
-			memcpy(block, buffer + bufOff, chunk);
+		if (copyStart < copyEnd)
+			memcpy(block + (copyStart - blockStart),
+				   buffer + (copyStart - offset),
+				   copyEnd - copyStart);
 		blockWrite(disk, inode->block[i], block);
-		bufOff += chunk;
-		remaining -= chunk;
 	}
 }
 
@@ -56,7 +58,7 @@ int fsWrite(FsNode *file,
 	DiskOperations *disk = file->fs->disk;
 	Inode currentInode;
 
-	blockCount = (length + MAX_BLOCK_SIZE - 1) / MAX_BLOCK_SIZE;
+	blockCount = (offset + length + MAX_BLOCK_SIZE - 1) / MAX_BLOCK_SIZE;
 	if (blockCount == 0)
 		blockCount = 1;
 	if (blockCount > FS_D_BLOCKS)
@@ -69,15 +71,43 @@ int fsWrite(FsNode *file,
 	if (getInode(file->fs, myEntry.inode, &currentInode) != FS_SUCCESS)
 		return FS_ERROR;
 
-	currentInode.size = length;
+	currentInode.size = offset + length;
 
 	for (i = currentInode.blocks; i < blockCount; i++) {
 		uint32_t newBlock = getFreeBlockNumber(file->fs);
-		if (newBlock == 0)
+		if (newBlock == 0) {
+			while (i-- > currentInode.blocks) {
+				setSbFreeBlockCount(file, 1);
+				setGdFreeBlockCount(file, currentInode.block[i], 1);
+				blockRead(disk,
+						  BLOCKS_PER_GROUP * GET_DATA_GROUP(currentInode.block[i]) +
+							  BLOCK_BITMAP_BASE,
+						  block);
+				setZeroBit(currentInode.block[i] % BLOCKS_PER_GROUP, block);
+				blockWrite(disk,
+						   BLOCKS_PER_GROUP * GET_DATA_GROUP(currentInode.block[i]) +
+							   BLOCK_BITMAP_BASE,
+						   block);
+			}
 			return FS_ERROR;
+		}
 		currentInode.block[i] = newBlock;
 		setSbFreeBlockCount(file, -1);
 		setGdFreeBlockCount(file, newBlock, -1);
+	}
+	for (i = blockCount; i < currentInode.blocks; i++) {
+		setSbFreeBlockCount(file, 1);
+		setGdFreeBlockCount(file, currentInode.block[i], 1);
+		blockRead(disk,
+				  BLOCKS_PER_GROUP * GET_DATA_GROUP(currentInode.block[i]) +
+					  BLOCK_BITMAP_BASE,
+				  block);
+		setZeroBit(currentInode.block[i] % BLOCKS_PER_GROUP, block);
+		blockWrite(disk,
+				   BLOCKS_PER_GROUP * GET_DATA_GROUP(currentInode.block[i]) +
+					   BLOCK_BITMAP_BASE,
+				   block);
+		currentInode.block[i] = 0;
 	}
 	currentInode.blocks = blockCount;
 
@@ -89,7 +119,7 @@ int fsWrite(FsNode *file,
 
 int setZeroBit(uint32_t number, uint8_t *bitmap)
 {
-	uint8_t value;
+	uint8_t value = 0;
 	uint32_t byte = number / 8;
 	uint32_t offset = number % 8;
 
@@ -186,7 +216,7 @@ int fsRmdir(FsNode *parent, FsNode *rmdir)
 
 	for (i = 0; i < inodeBuffer.blocks; i++) {
 		memset(block, 0, MAX_BLOCK_SIZE);
-		if (i <= FS_D_BLOCKS) {
+		if (i < FS_D_BLOCKS) {
 			blockWrite(disk, inodeBuffer.block[i], block);
 			setGdFreeBlockCount(rmdir, inodeBuffer.block[i], count);
 			setSbFreeBlockCount(rmdir, count);
@@ -253,7 +283,7 @@ int fsRemove(FsNode *parent, FsNode *rmfile)
 
 	for (i = 0; i < inodeBuffer.blocks; i++) {
 		memset(block, 0, MAX_BLOCK_SIZE);
-		if (i <= FS_D_BLOCKS) {
+		if (i < FS_D_BLOCKS) {
 			blockWrite(disk, inodeBuffer.block[i], block);
 			setGdFreeBlockCount(rmfile, inodeBuffer.block[i], count);
 			setSbFreeBlockCount(rmfile, count);
@@ -302,15 +332,16 @@ int fsMkdir(FsNode *parent, const char *entryName, FsNode *retEntry)
 {
 	FsNode dotNode, dotdotNode;
 	uint32_t firstCluster;
-	char name[MAX_ENTRY_NAME_LENGTH];
+	char name[MAX_NAME_LENGTH] = { 0 };
 	int result;
 	int i;
 	int freeInode, free_data_block, count;
 	Inode inode_entry;
 
-	strcpy((char *)name, entryName);
+	strncpy(name, entryName, MAX_NAME_LENGTH - 1);
 
-	formatName(parent->fs, (char *)name);
+	if (formatName(parent->fs, name) == FS_ERROR)
+		return FS_ERROR;
 
 	freeInode = getFreeInodeNumber(parent->fs);
 	free_data_block = getFreeBlockNumber(parent->fs);
@@ -376,8 +407,9 @@ int read_dir_from_block(Filesystem *fs,
 	FsNode node;
 	dir_entry = (DirEntry *)block;
 	uint32_t i = 0;
+	uint32_t lastEntry = MAX_BLOCK_SIZE / sizeof(DirEntry);
 
-	while (dir_entry[i].name[0] != DIR_ENTRY_NO_MORE) {
+	while (i < lastEntry && dir_entry[i].name[0] != DIR_ENTRY_NO_MORE) {
 		if ((dir_entry[i].name[0] != '.') &&
 			(dir_entry[i].name[0] != DIR_ENTRY_FREE)) {
 			node.entry = dir_entry[i];
@@ -482,7 +514,7 @@ int fsCreate(FsNode *parent, const char *entryName, FsNode *retEntry)
 {
 	DirEntry dir_entry;
 	uint32_t inode;
-	char name[MAX_ENTRY_NAME_LENGTH] = {
+	char name[MAX_NAME_LENGTH] = {
 		0,
 	};
 	uint8_t block[MAX_BLOCK_SIZE];
@@ -495,13 +527,12 @@ int fsCreate(FsNode *parent, const char *entryName, FsNode *retEntry)
 	if ((parent->fs->gd.freeInodesCount) == 0)
 		return FS_ERROR;
 
-	strncpy(name, entryName, MAX_ENTRY_NAME_LENGTH);
+	strncpy(name, entryName, MAX_NAME_LENGTH - 1);
 
 	if (formatName(parent->fs, name) == FS_ERROR)
 		return FS_ERROR;
 
 	memset(retEntry, 0, sizeof(FsNode));
-	memcpy(retEntry->entry.name, entryName, MAX_ENTRY_NAME_LENGTH);
 	if (fsLookup(parent, name, retEntry) == FS_SUCCESS)
 		return FS_ERROR; /* if file exists */
 
@@ -772,15 +803,20 @@ int readRootBlock(Filesystem *fs, uint8_t *block)
 int getInode(Filesystem *fs, uint32_t inode_num, Inode *inodeBuffer)
 {
 	uint8_t block[MAX_BLOCK_SIZE];
+
+	if (inode_num == 0 || inode_num > NUMBER_OF_INODES)
+		return FS_ERROR;
+
 	inode_num--;
 	uint32_t groupNumber = inode_num / INODES_PER_GROUP;
 	uint32_t group_inode_offset = inode_num % INODES_PER_GROUP;
 	uint32_t blockNumber = group_inode_offset / INODES_PER_BLOCK;
 	uint32_t block_inode_offset = group_inode_offset % INODES_PER_BLOCK;
 
-	blockRead(fs->disk,
-			  INODE_TABLE_BASE + (groupNumber * BLOCKS_PER_GROUP) + blockNumber,
-			  block);
+	if (blockRead(fs->disk,
+				  INODE_TABLE_BASE + (groupNumber * BLOCKS_PER_GROUP) + blockNumber,
+				  block))
+		return FS_ERROR;
 	memcpy(inodeBuffer,
 		   block + (INODE_SIZE * (block_inode_offset)),
 		   sizeof(Inode));
@@ -909,7 +945,8 @@ uint32_t getFreeBlockNumber(Filesystem *fs)
 					blockset.bitNum = 8 * i + j;
 					blockset.indexNum = i;
 					setBlockBitmap(fs, &b_bitmap, blockset);
-					return blockset.bitNum;
+					return (fs->sb.blockGroupNumber * BLOCKS_PER_GROUP) +
+						blockset.bitNum;
 				}
 			}
 		}
@@ -1100,6 +1137,7 @@ int setInodeBitmap(Filesystem *fs, InodeBitmap *i_bitmap, Bitset bitset)
 	blockWrite(disk,
 			   (fs->sb.blockGroupNumber * BLOCKS_PER_GROUP) + INODE_BITMAP_BASE,
 			   i_bitmap);
+	return FS_SUCCESS;
 }
 
 int setBlockBitmap(Filesystem *fs, BlockBitmap *b_bitmap, Bitset bitset)
@@ -1109,6 +1147,7 @@ int setBlockBitmap(Filesystem *fs, BlockBitmap *b_bitmap, Bitset bitset)
 	blockWrite(disk,
 			   (fs->sb.blockGroupNumber * BLOCKS_PER_GROUP) + BLOCK_BITMAP_BASE,
 			   b_bitmap);
+	return FS_SUCCESS;
 }
 
 void upper_string(char *str, int length)
@@ -1146,10 +1185,15 @@ int formatName(Filesystem *fs, char *name)
 					return FS_ERROR;
 				extender = 1;
 			} else if (isdigit(name[i]) || isalpha(name[i])) {
-				if (extender)
+				if (extender) {
+					if (extenderCurrent >= MAX_ENTRY_NAME_LENGTH)
+						return FS_ERROR;
 					regularName[extenderCurrent++] = name[i];
-				else
+				} else {
+					if (nameLength >= 8)
+						return FS_ERROR;
 					regularName[nameLength++] = name[i];
+				}
 			} else
 				return FS_ERROR;
 		}
@@ -1176,7 +1220,7 @@ int blockRead(DiskOperations *disk, uint32_t block, void *data)
 
 int setBit(uint32_t number, uint8_t *bitmap)
 {
-	uint8_t value;
+	uint8_t value = 0;
 	uint32_t byte = number / 8;
 	uint32_t offset = number % 8;
 
@@ -1207,6 +1251,7 @@ int setBit(uint32_t number, uint8_t *bitmap)
 		break;
 	}
 	bitmap[byte] |= value;
+	return FS_SUCCESS;
 }
 
 int dumpMemory(DiskOperations *disk, int block)

@@ -26,17 +26,20 @@ int sfsMount(DiskOperations *disk, ShellFsOperations *fsOprs, ShellEntry *root)
 
 	result = readSuperblock(fs, &fsEntry);
 
-	if (result == FS_SUCCESS) {
-		printk("number of groups         : %d\n", NUMBER_OF_GROUPS);
-		printk("blocks per group         : %d\n", fs->sb.blockPerGroup);
-		printk("bytes per block          : %d\n", disk->bytesPerSector);
-		printk("kfree block count	 : %d\n", fs->sb.freeBlockCount);
-		printk("kfree inode count	 : %d\n", fs->sb.freeInodeCount);
-		printk("first non reserved inode : %d\n", fs->sb.firstNonReservedInode);
-		printk("inode structure size	 : %d\n", fs->sb.inodeStructureSize);
-		printk("first data block number  : %d\n\n",
-			   fs->sb.firstDataBlockEachGroup);
+	if (result != FS_SUCCESS) {
+		kfree(fsOprs->pdata);
+		fsOprs->pdata = NULL;
+		return result;
 	}
+
+	printk("number of groups         : %d\n", NUMBER_OF_GROUPS);
+	printk("blocks per group         : %d\n", fs->sb.blockPerGroup);
+	printk("bytes per block          : %d\n", disk->bytesPerSector);
+	printk("kfree block count        : %d\n", fs->sb.freeBlockCount);
+	printk("kfree inode count	     : %d\n", fs->sb.freeInodeCount);
+	printk("first non reserved inode : %d\n", fs->sb.firstNonReservedInode);
+	printk("inode structure size     : %d\n", fs->sb.inodeStructureSize);
+	printk("first data block number  : %d\n\n", fs->sb.firstDataBlockEachGroup);
 
 	fsNodeToShellEntry(&fsEntry, root);
 

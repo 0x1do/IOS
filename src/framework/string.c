@@ -7,6 +7,11 @@ char *uintToStr(uint32_t value, int base, char *return_buffer)
 	return_buffer[0] = '\0';
 	int i;
 
+	if (base < 2 || base > 16) {
+		return_buffer[0] = '\0';
+		return return_buffer;
+	}
+
 	if (value == 0) {
 		return_buffer[0] = '0';
 		return_buffer[1] = '\0';
@@ -32,7 +37,7 @@ char *intToStr(int value, int base, char *return_buffer)
 		return uintToStr((uint32_t)value, base, return_buffer);
 	}
 	return_buffer[0] = '-';
-	uintToStr((uint32_t)-value, base, return_buffer + 1);
+	uintToStr(0u - (uint32_t)value, base, return_buffer + 1);
 	return return_buffer;
 }
 
@@ -41,6 +46,12 @@ char *ulongToStr(uint64_t value, int base, char *return_buffer)
 	char len = 64;
 	char buf[len];
 	int i = 0;
+
+	if (base < 2 || base > 16) {
+		return_buffer[0] = '\0';
+		return return_buffer;
+	}
+
 	if (value == 0) {
 		return_buffer[0] = '0';
 		return_buffer[1] = '\0';
@@ -65,7 +76,7 @@ char *longToStr(long value, int base, char *return_buffer)
 		return ulongToStr((uint64_t)value, base, return_buffer);
 	} else {
 		return_buffer[0] = '-';
-		ulongToStr((uint64_t)(-value), base, return_buffer + 1);
+		ulongToStr(0ull - (uint64_t)value, base, return_buffer + 1);
 		return return_buffer;
 	}
 }
@@ -85,13 +96,14 @@ int strcmp(const char *str1, const char *str2)
 
 char *strcpy(char *dest, const char *src)
 {
+	char *retptr = dest;
 	while (*src != '\0') {
 		*dest = *src;
 		dest++;
 		src++;
 	}
 	*dest = '\0';
-	return dest;
+	return retptr;
 }
 
 char *strcat(char *dest, const char *src)

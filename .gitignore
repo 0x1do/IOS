@@ -3,3 +3,7 @@ iso/
 .clang-format
 gdbscript
 .gdb_history
+scripts/ioslink-hub
+log.txt
+*.o
+*.elf

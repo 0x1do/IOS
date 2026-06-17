@@ -201,7 +201,7 @@ int getCharFromString(void *context)
 
 int scankCore(getCharFunc getc, void *context, const char *fmt, va_list args)
 {
-	char ch;
+	int ch;
 	int scanned_count = 0;
 	while (*fmt) {
 		if (*fmt == '%') {
@@ -214,7 +214,7 @@ int scankCore(getCharFunc getc, void *context, const char *fmt, va_list args)
 				while (1) {
 					ch = getc(context);
 
-					if (ch == '\n' || ch == '\r') {
+					if (ch == -1 || ch == '\n' || ch == '\r') {
 						*arg = '\0';
 						break;
 					}
@@ -228,13 +228,34 @@ int scankCore(getCharFunc getc, void *context, const char *fmt, va_list args)
 					}
 					if (ch == '\b') {
 						*arg = '\0'; /* without it, asdf<\b> will return asdf */
-						arg--;
+						if (arg != str)
+							arg--;
 						continue;
 					}
 
 					*arg = ch;
 					arg++;
 				}
+				scanned_count++;
+			} else if (*fmt == 'd') {
+				int *out = va_arg(args, int *);
+				int value = 0;
+				int sign = 1;
+				int digits = 0;
+
+				ch = getc(context);
+				if (ch == '-') {
+					sign = -1;
+					ch = getc(context);
+				}
+				while (ch >= '0' && ch <= '9') {
+					value = value * 10 + (ch - '0');
+					digits++;
+					ch = getc(context);
+				}
+				if (digits == 0)
+					break;
+				*out = sign * value;
 				scanned_count++;
 			}
 		} else {
@@ -244,6 +265,8 @@ int scankCore(getCharFunc getc, void *context, const char *fmt, va_list args)
 		}
 		fmt++;
 	}
+
+	return scanned_count;
 }
 
 int scank(const char *fmt, ...)

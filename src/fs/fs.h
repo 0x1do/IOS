@@ -24,7 +24,7 @@ typedef struct DiskOperations {
 #define NUMBER_OF_SECTORS (TOTAL_DISK_SIZE / MAX_SECTOR_SIZE)
 #define NUMBER_OF_GROUPS ((TOTAL_DISK_SIZE - MAX_BLOCK_SIZE) / MAX_BLOCK_GROUP_SIZE)
 #define NUMBER_OF_INODES (NUMBER_OF_BLOCK / 2)
-#define NUMBER_OF_BLOCK (TOTAL_DISK_SIZE / MAX_BLOCK_SIZE)
+#define NUMBER_OF_BLOCK (BLOCKS_PER_GROUP * NUMBER_OF_GROUPS)
 #define MAX_BLOCK_GROUP_SIZE (8 * MAX_BLOCK_SIZE * MAX_BLOCK_SIZE)
 #define BLOCKS_PER_GROUP (MAX_BLOCK_GROUP_SIZE / MAX_BLOCK_SIZE)
 #define INODES_PER_GROUP (NUMBER_OF_INODES / NUMBER_OF_GROUPS)
@@ -203,6 +203,7 @@ int initFsGdt(DiskOperations *disk, GroupDescriptorTable *gdt, uint32_t groupNum
 int initBlockBitmap(DiskOperations *disk, uint32_t groupNumber);
 int initInodeBitmap(DiskOperations *disk, uint32_t groupNumber);
 int setBit(uint32_t number, uint8_t *bitmap);
+int setZeroBit(uint32_t number, uint8_t *bitmap);
 int dumpMemory(DiskOperations *disk, int sector);
 int validateSb(void *block);
 int getInode(Filesystem *fs, uint32_t inodeNum, Inode *inodeBuffer);
