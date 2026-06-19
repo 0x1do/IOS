@@ -1,8 +1,10 @@
 #include "shell.h"
 #include "allocator.h"
 #include "connection.h"
+#include "crypto.h"
 #include "disksim.h"
 #include "fs.h"
+#include "fs_shell.h"
 #include "keyboard.h"
 #include "mem.h"
 #include "msg.h"
@@ -49,6 +51,8 @@ int shell_cmd_echo(int argc, char *argv[]);
 int shell_cmd_conn(int argc, char *argv[]);
 int shell_cmd_setid(int argc, char *argv[]);
 int shell_cmd_sendmsg(int argc, char *argv[]);
+int shell_cmd_encrypt(int argc, char *argv[]);
+int shell_cmd_decrypt(int argc, char *argv[]);
 
 static Command g_commands[] = { { "cd", shell_cmd_cd, COND_MOUNT },
 								{ "mount", shell_cmd_mount, COND_UMOUNT },
@@ -65,7 +69,9 @@ static Command g_commands[] = { { "cd", shell_cmd_cd, COND_MOUNT },
 								{ "echo", shell_cmd_echo, 0 },
 								{ "conn", shell_cmd_conn, 0 },
 								{ "setid", shell_cmd_setid, 0 },
-								{ "sendmsg", shell_cmd_sendmsg, 0 } };
+								{ "sendmsg", shell_cmd_sendmsg, 0 },
+								{ "encrypt", shell_cmd_encrypt, COND_MOUNT },
+								{ "decrypt", shell_cmd_decrypt, COND_MOUNT } };
 
 static ShellFilesystem g_fs;
 static ShellFsOperations g_fsOprs;
@@ -117,6 +123,27 @@ static int write_string_to_file(const char *filename, const char *data, int len)
 	}
 
 	return 0;
+}
+
+#define CRYPT_BUF_MAX (FS_D_BLOCKS * MAX_BLOCK_SIZE)
+static uint8_t g_cryptbuf[CRYPT_BUF_MAX];
+
+static int read_whole_file(ShellEntry *entry, char *out, int max)
+{
+	int total = 0, r;
+
+	while (total < max &&
+		   (r = g_fsOprs.fileOprs->read(&g_disk,
+										&g_fsOprs,
+										&g_currentDir,
+										entry,
+										total,
+										1024,
+										out + total)) > 0) {
+		total += r;
+	}
+
+	return total;
 }
 
 static void redraw_tail(const char *buf, int cur, int len, int blank)
@@ -695,6 +722,155 @@ int shell_cmd_cat(int argc, char *argv[])
 		memset(buf, 0, sizeof(buf));
 	}
 	printk("\n");
+	return 0;
+}
+
+/* is the encrypted flag set on this file inode? */
+static int crypt_is_marked(const ShellEntry *entry)
+{
+	FsNode node;
+	Inode ino;
+
+	shellEntryToFsNode(entry, &node);
+	if (getInode(node.fs, node.entry.inode, &ino) != FS_SUCCESS)
+		return 0;
+
+	return (ino.flags & FS_ENCRYPT_FL) != 0;
+}
+
+/* set or clear the encrypted flag */
+static void crypt_mark_inode(const ShellEntry *entry, int on)
+{
+	FsNode node;
+	Inode ino;
+
+	shellEntryToFsNode(entry, &node);
+	if (getInode(node.fs, node.entry.inode, &ino) != FS_SUCCESS)
+		return;
+
+	if (on)
+		ino.flags |= FS_ENCRYPT_FL;
+	else
+		ino.flags &= ~FS_ENCRYPT_FL;
+
+	insertInodeTable(&node, &ino, node.entry.inode);
+}
+
+int shell_cmd_encrypt(int argc, char *argv[])
+{
+	if (is_help(argc, argv)) {
+		printk("encrypt <file> <password> - XOR a file with the password\n");
+		return 0;
+	}
+	if (argc != 3) {
+		printk("usage : %s [file] [password]\n", argv[0]);
+		return 0;
+	}
+	if (!argv[2][0]) {
+		printk("password required\n");
+		return -1;
+	}
+
+	ShellEntry entry;
+	int total, outlen;
+
+	if (g_fsOprs.lookup(&g_disk, &g_fsOprs, &g_currentDir, &entry, argv[1])) {
+		printk("%s lookup failed\n", argv[1]);
+		return -1;
+	}
+	if (entry.isDirectory) {
+		printk("%s is a directory\n", argv[1]);
+		return -1;
+	}
+	if (crypt_is_marked(&entry)) {
+		printk("%s is already encrypted\n", argv[1]);
+		return -1;
+	}
+	if (entry.size + 1 > CRYPT_BUF_MAX) { /* +1 for the check byte */
+		printk("%s is too large to encrypt\n", argv[1]);
+		return -1;
+	}
+
+	g_cryptbuf[0] = CRYPT_CHECK_BYTE;
+	total = read_whole_file(&entry, (char *)g_cryptbuf + 1, CRYPT_BUF_MAX - 1);
+	outlen = total + 1;
+
+	cryptXor(g_cryptbuf, outlen, argv[2]);
+
+	if (g_fsOprs.fileOprs->write(&g_disk,
+								 &g_fsOprs,
+								 &g_currentDir,
+								 &entry,
+								 0,
+								 outlen,
+								 (char *)g_cryptbuf)) {
+		printk("write failed\n");
+		return -1;
+	}
+
+	crypt_mark_inode(&entry, 1);
+	printk("encrypted %s (%d bytes)\n", argv[1], total);
+	return 0;
+}
+
+int shell_cmd_decrypt(int argc, char *argv[])
+{
+	if (is_help(argc, argv)) {
+		printk("decrypt <file> <password> - restore a file XOR'd with the "
+			   "password\n");
+		return 0;
+	}
+	if (argc != 3) {
+		printk("usage : %s [file] [password]\n", argv[0]);
+		return 0;
+	}
+	if (!argv[2][0]) {
+		printk("password required\n");
+		return -1;
+	}
+
+	ShellEntry entry;
+	int total, outlen;
+
+	if (g_fsOprs.lookup(&g_disk, &g_fsOprs, &g_currentDir, &entry, argv[1])) {
+		printk("%s lookup failed\n", argv[1]);
+		return -1;
+	}
+	if (!crypt_is_marked(&entry)) {
+		printk("%s is not encrypted\n", argv[1]);
+		return -1;
+	}
+	if (entry.size > CRYPT_BUF_MAX) {
+		printk("%s is too large\n", argv[1]);
+		return -1;
+	}
+
+	total = read_whole_file(&entry, (char *)g_cryptbuf, CRYPT_BUF_MAX);
+
+	cryptXor(g_cryptbuf, total, argv[2]);
+
+	if (total < 1 || g_cryptbuf[0] != CRYPT_CHECK_BYTE) {
+		printk("wrong password for %s\n", argv[1]);
+		return -1;
+	}
+
+	outlen = total - 1;
+	for (int i = 0; i < outlen; i++)
+		g_cryptbuf[i] = g_cryptbuf[i + 1];
+
+	if (g_fsOprs.fileOprs->write(&g_disk,
+								 &g_fsOprs,
+								 &g_currentDir,
+								 &entry,
+								 0,
+								 outlen,
+								 (char *)g_cryptbuf)) {
+		printk("write failed\n");
+		return -1;
+	}
+
+	crypt_mark_inode(&entry, 0);
+	printk("decrypted %s (%d bytes)\n", argv[1], outlen);
 	return 0;
 }
 
